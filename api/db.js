@@ -210,6 +210,33 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok:true });
     }
 
+    // ── Password Reset (calls Supabase auth) ────────────────────────
+    if (action === "reset_password") {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error:"Email required" });
+      const r = await fetch(`${SB_URL}/auth/v1/recover`, {
+        method:"POST",
+        headers:{ "apikey":SB_SERVICE, "Content-Type":"application/json" },
+        body: JSON.stringify({ email })
+      });
+      return res.status(200).json({ ok: r.ok });
+    }
+
+    // ── Delete Account ────────────────────────────────────────────
+    if (action === "delete_account") {
+      const { user_id } = req.body;
+      if (!user?.id) return res.status(401).json({ error:"Unauthorized" });
+      if (user.id !== user_id) return res.status(403).json({ error:"Forbidden" });
+      // Delete child data first
+      await sbQuery("progress","DELETE",null,`?child_id=in.(select id from children where parent_id=eq.${encodeURIComponent(user_id)})`).catch(()=>{});
+      await sbQuery("children","DELETE",null,`?parent_id=eq.${encodeURIComponent(user_id)}`).catch(()=>{});
+      // Delete Supabase auth user
+      await fetch(`${SB_URL}/auth/v1/admin/users/${encodeURIComponent(user_id)}`, {
+        method:"DELETE", headers:{ "apikey":SB_SERVICE, "Authorization":`Bearer ${SB_SERVICE}` }
+      }).catch(()=>{});
+      return res.status(200).json({ ok:true });
+    }
+
     return res.status(400).json({ error:"Unknown action" });
 
   } catch(err) {
