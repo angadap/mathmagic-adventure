@@ -759,7 +759,7 @@ async function fetchSetQuestions(lessonId, setIndex) {
         opts: Array.isArray(r.options) ? r.options : JSON.parse(r.options),
         ans: r.correct_answer,
         h: r.hint,
-      }));
+      })));
       return shuffle(Q_RAW_CACHE[key].map(r => {
         const { opts, ans } = shuffleOpts(r.opts, r.ans);
         return { q: r.q, opts, ans, h: r.h };
