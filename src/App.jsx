@@ -35,15 +35,17 @@ export class ErrorBoundary extends React.Component {
 // ─────────────────────────────────────────────────────────────────────
 // ── THEMES ────────────────────────────────────────────────────────────
 const THEMES = {
-  light:  { name:"Bright Day",   icon:"☀️",  bg:"#f0f4ff", card:"#ffffff",  card2:"#e8eeff", cyan:"#0ea5e9", purple:"#7c3aed", pink:"#db2777", orange:"#ea580c", yellow:"#d97706", green:"#16a34a", red:"#dc2626", dim:"#94a3b8" },
-  pastel: { name:"Pastel Kids",  icon:"🌸",  bg:"#fff5f9", card:"#ffffff",  card2:"#ffeef5", cyan:"#06b6d4", purple:"#9333ea", pink:"#ec4899", orange:"#f97316", yellow:"#eab308", green:"#22c55e", red:"#ef4444", dim:"#a78bba" },
-  candy:  { name:"Candy Pop",    icon:"🍭",  bg:"#1a0628", card:"#2d0a3e",  card2:"#3d1050", cyan:"#f472b6", purple:"#c084fc", pink:"#fb7185", orange:"#fb923c", yellow:"#fde047", green:"#4ade80", red:"#f43f5e", dim:"#9d6db5" },
-  space:  { name:"Space Dark",   icon:"🌌",  bg:"#04040f", card:"#0d0d2b",  card2:"#10102e", cyan:"#00f5ff", purple:"#a855f7", pink:"#ec4899", orange:"#f97316", yellow:"#fbbf24", green:"#22c55e", red:"#ef4444", dim:"#6b7db3" },
-  jungle: { name:"Jungle Fun",   icon:"🦁",  bg:"#f0fdf4", card:"#ffffff",  card2:"#dcfce7", cyan:"#059669", purple:"#15803d", pink:"#fb923c", orange:"#d97706", yellow:"#ca8a04", green:"#16a34a", red:"#dc2626", dim:"#6b8f72" },
-  ocean:  { name:"Ocean Splash", icon:"🐬",  bg:"#f0f9ff", card:"#ffffff",  card2:"#e0f2fe", cyan:"#0284c7", purple:"#4f46e5", pink:"#db2777", orange:"#ea580c", yellow:"#ca8a04", green:"#059669", red:"#dc2626", dim:"#64a0b8" },
+  candy:  { name:"Candy Pop",    icon:"🍭", bg:"#1a0628", card:"#2d0a3e",  card2:"#3d1050", cyan:"#f472b6", purple:"#c084fc", pink:"#fb7185", orange:"#fb923c", yellow:"#fde047", green:"#4ade80", red:"#f43f5e", dim:"#9d6db5" },
+  space:  { name:"Space Dark",   icon:"🌌", bg:"#04040f", card:"#0d0d2b",  card2:"#10102e", cyan:"#00f5ff", purple:"#a855f7", pink:"#ec4899", orange:"#f97316", yellow:"#fbbf24", green:"#22c55e", red:"#ef4444", dim:"#6b7db3" },
+  jungle: { name:"Jungle Fun",   icon:"🦁", bg:"#0a1f0a", card:"#122212",  card2:"#1a2e18", cyan:"#86efac", purple:"#a3e635", pink:"#fb923c", orange:"#fbbf24", yellow:"#fde047", green:"#4ade80", red:"#f87171", dim:"#5a7a52" },
+  ocean:  { name:"Ocean Splash", icon:"🐬", bg:"#020f20", card:"#051c38",  card2:"#072548", cyan:"#38bdf8", purple:"#818cf8", pink:"#f472b6", orange:"#fb923c", yellow:"#fde047", green:"#34d399", red:"#f87171", dim:"#3a6080" },
+  light:  { name:"Bright Day",   icon:"☀️", bg:"#f8faff", card:"#ffffff",  card2:"#eef2ff", cyan:"#0ea5e9", purple:"#7c3aed", pink:"#db2777", orange:"#ea580c", yellow:"#d97706", green:"#16a34a", red:"#dc2626", dim:"#64748b" },
+  pastel: { name:"Pastel Kids",  icon:"🌸", bg:"#fff5fb", card:"#ffffff",  card2:"#fce7f3", cyan:"#0891b2", purple:"#9333ea", pink:"#ec4899", orange:"#f97316", yellow:"#ca8a04", green:"#16a34a", red:"#dc2626", dim:"#9d6db5" },
 };
-function getThemeColors() { return THEMES[localStorage.getItem("mm_theme")||"light"] || THEMES.light; }
+function getThemeColors() { return THEMES[localStorage.getItem("mm_theme")||"candy"] || THEMES.candy; }
 let C = getThemeColors();
+// Input text color helper — white on dark themes, dark on light themes
+const inputTextColor = () => C.bg.startsWith('#f') ? '#1a1a2e' : 'white';
 
 // ─────────────────────────────────────────────────────────────────────
 // GLOBAL CSS injected once inside a component (safe in artifact env)
@@ -84,9 +86,9 @@ function GlobalStyles() {
         @keyframes bFloat{0%,100%{transform:translateY(0)scale(1)}50%{transform:translateY(-10px)scale(1.05)}}
         @keyframes bossW{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
         *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-        body{background:${C.bg || '#04040f'}}
+        body{background:${C.bg}}
         input{font-family:'Nunito',sans-serif;outline:none;color:white}
-        input::placeholder{color:#2a3a6a}
+        input::placeholder{color:"+C.dim+'}'}
         ::-webkit-scrollbar{width:3px}
         ::-webkit-scrollbar-thumb{background:#a855f7;border-radius:4px}
       `;
@@ -613,10 +615,10 @@ const db = {
     const sb = await this.getSb();
     if (sb) {
       const r = await sb.select("children", { id: cid });
-      if (!r.error && r.data?.[0]) { const c=r.data[0]; if(!MEM.children.find(m=>m.id===c.id)) MEM.children.push(c); return { ok: String(c.pin_hash).trim() === String(pin).trim(), child:c }; }
+      if (!r.error && r.data?.[0]) { const c=r.data[0]; if(!MEM.children.find(m=>m.id===c.id)) MEM.children.push(c); return { ok:c.pin_hash===pin, child:c }; }
     }
     const c = MEM.children.find(x=>x.id===cid);
-    return c ? { ok: String(c.pin_hash).trim() === String(pin).trim(), child:c } : { ok:false };
+    return c ? { ok:c.pin_hash===pin, child:c } : { ok:false };
   },
 
   async addXP(cid, xp, coins=0) {
@@ -2349,7 +2351,7 @@ function Inp({ value, onChange, placeholder, type = "text", label, error, onEnte
           style={{
             width:"100%",
             padding:`12px ${isPass ? "44px" : "13px"} 12px 13px`,
-            background:"#07071a",
+            background:C.card2,
             border:`1.5px solid ${error ? C.red + "99" : C.purple + "44"}`,
             borderRadius:12, fontSize:14, fontWeight:600,
           }}
@@ -2988,10 +2990,10 @@ function ThemeSelector({ onClose }) {
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
           {themes.map(([key,t]) => (
             <button key={key} onClick={() => {
-              localStorage.setItem("mm_theme",""); // force
               localStorage.setItem("mm_theme", key);
-              setCur(key); C = THEMES[key] || THEMES.space;
-              window.location.reload(); // reload to apply theme everywhere
+              setCur(key);
+              C = THEMES[key] || THEMES.candy;
+              if (onThemeChange) onThemeChange(key);
             }} style={{
               background: cur===key ? `${t.cyan}22` : t.bg,
               border:`2px solid ${cur===key ? t.cyan : t.dim+"44"}`,
@@ -3221,7 +3223,7 @@ function LessonMap({ world, child, onBack, onLesson }) {
           const done   = lessonDone(lesson.id);
           const cSets  = completedSets(lesson.id);
           const isExp  = expanded === lesson.id;
-          const lessonUnlocked = true; // All lessons open at Set 1 from day one
+          const lessonUnlocked = true; // All lessons open — Set 1 unlocked by default
           return (
             <div key={lesson.id} style={{ marginBottom:10 }}>
               {/* Lesson header row */}
@@ -3553,7 +3555,7 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
         <Card color={world.color} style={{ textAlign:"center", padding:"18px 14px", marginBottom:12, transform: burst?"scale(1.02)":"scale(1)", transition:"transform 0.2s" }}>
           <div style={{ fontSize:34, marginBottom:8 }}>{lesson.emoji}</div>
           <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:16, color:"white", lineHeight:1.4 }}>{q.q}</div>
-          {/* correct feedback shown via floating overlay only */}
+          {/* correct shown via floating overlay */}
         </Card>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
           {q.opts.map((opt, i) => {
@@ -4166,7 +4168,7 @@ function FeedbackScreen({ child, currentScreen, onBack, prefillCategory }) {
             maxLength={500}
             rows={5}
             style={{
-              width:"100%", padding:"13px", background:"#07071a",
+              width:"100%", padding:"13px", background:C.card2,
               border:`1.5px solid ${C.purple}44`, borderRadius:13,
               color:"white", fontSize:13, fontFamily:"'Nunito',sans-serif",
               resize:"none", outline:"none", lineHeight:1.6,
@@ -4652,7 +4654,7 @@ function MathMaze({ onBack, child }) {
               {i<step?"✅":i===step?"🧑‍🚀":"⬛"}
             </div>
           ))}
-          <div style={{width:32,height:32,borderRadius:8,background:"#0a0a20",border:`2px solid ${C.yellow}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏆</div>
+          <div style={{width:32,height:32,borderRadius:8,background:C.card,border:`2px solid ${C.yellow}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏆</div>
         </div>
         <Card color={C.green} style={{textAlign:"center",marginBottom:18,padding:"20px",animation:shake?"shakeX 0.4s ease":"none"}}>
           <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20,color:"white",marginBottom:4}}>🧑‍🚀 Solve to move forward!</div>
@@ -4867,7 +4869,7 @@ function NumberMemory({ onBack, child }) {
             <div style={{color:C.dim,fontSize:13,marginBottom:14,fontFamily:"'Orbitron',sans-serif",letterSpacing:2}}>REMEMBER THIS SEQUENCE</div>
             <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
               {sequence.map((n,i)=>(
-                <div key={i} style={{width:52,height:52,borderRadius:14,background:i===showing?`${C.pink}44`:"#0a0a20",border:`2px solid ${i===showing?C.pink:"#1a1a30"}`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Orbitron',sans-serif",fontSize:i===showing?26:0,color:C.pink,transition:"all 0.2s",boxShadow:i===showing?`0 0 20px ${C.pink}`:"none"}}>
+                <div key={i} style={{width:52,height:52,borderRadius:14,background:i===showing?`${C.pink}44`:C.card2,border:`2px solid ${i===showing?C.pink:C.dim+"33"}`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Orbitron',sans-serif",fontSize:i===showing?26:0,color:C.pink,transition:"all 0.2s",boxShadow:i===showing?`0 0 20px ${C.pink}`:"none"}}>
                   {i===showing?n:""}
                 </div>
               ))}
@@ -5218,124 +5220,96 @@ function RatingPrompt({ child, onClose }) {
 
 // ── Privacy Policy ────────────────────────────────────────────────────
 
-// ── Terms of Service ─────────────────────────────────────────────
+// ── TermsOfService ────────────────────────────────────────────────
 function TermsOfService({ onBack }) {
-  useEffect(() => { window.scrollTo(0,0); }, []);
-  const S = { h: { fontFamily:"'Orbitron',sans-serif", fontSize:13, color:C.cyan, margin:"18px 0 8px" }, p: { color:C.dim, fontSize:13, lineHeight:1.7, marginBottom:10 } };
+  const S = { h:{fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.cyan,margin:"16px 0 6px"}, p:{color:C.dim,fontSize:12,lineHeight:1.7,marginBottom:8} };
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Nunito',sans-serif", padding:"20px 18px", overflowY:"auto" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px",overflowY:"auto"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
         <BackBtn onClick={onBack} color={C.cyan}/>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.cyan }}>TERMS OF SERVICE</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>TERMS OF SERVICE</div>
       </div>
-      <div style={{ maxWidth:480, margin:"0 auto" }}>
-        <div style={{ color:C.dim, fontSize:11, marginBottom:16 }}>Last updated: May 2026</div>
-        {[
-          ["1. Acceptance","By using MathMagic Space Academy, you agree to these Terms. If you are a parent or guardian registering a child, you accept these Terms on their behalf."],
-          ["2. Use of Service","MathMagic is a mathematics learning platform for children. You may not use the service for any unlawful purpose. You must provide accurate registration information."],
-          ["3. Accounts","Parents are responsible for maintaining account security. You must notify us immediately of any unauthorised use. We reserve the right to terminate accounts that violate these Terms."],
-          ["4. Content","All questions, lessons, and educational content are owned by MathMagic. You may not copy, distribute, or modify our content without written permission."],
-          ["5. Payments","Premium subscriptions are charged as selected (monthly/yearly). Refunds are subject to our refund policy. We reserve the right to change pricing with 30 days notice."],
-          ["6. Limitation of Liability","MathMagic is provided 'as is'. We are not liable for any indirect, incidental, or consequential damages arising from your use of the service."],
-          ["7. Changes","We may update these Terms at any time. Continued use after changes constitutes acceptance of the new Terms."],
-          ["8. Contact","For any queries: support@mathmagicapp.in"],
-        ].map(([h,p],i) => <div key={i}><div style={S.h}>{h}</div><p style={S.p}>{p}</p></div>)}
+      <div style={{maxWidth:480,margin:"0 auto"}}>
+        {[["1. Acceptance","By using MathMagic Space Academy you agree to these Terms. Parents accept on behalf of their child."],
+          ["2. Use of Service","MathMagic is for children's mathematics learning only. You must not use it for any unlawful purpose."],
+          ["3. Accounts","Parents are responsible for account security. We may terminate accounts that violate these Terms."],
+          ["4. Content","All lessons, questions and content are owned by MathMagic. Do not copy or distribute without permission."],
+          ["5. Payments","Subscriptions are charged as selected. Refunds subject to our policy. Pricing may change with 30 days notice."],
+          ["6. Liability","Service provided 'as is'. We are not liable for indirect or consequential damages."],
+          ["7. Contact","support@mathmagicapp.in"]
+        ].map(([h,p],i)=><div key={i}><div style={S.h}>{h}</div><p style={S.p}>{p}</p></div>)}
       </div>
     </div>
   );
 }
 
-// ── Data Compliance Policy ────────────────────────────────────────
+// ── DataPolicy ────────────────────────────────────────────────────
 function DataPolicy({ onBack }) {
-  useEffect(() => { window.scrollTo(0,0); }, []);
-  const S = { h: { fontFamily:"'Orbitron',sans-serif", fontSize:13, color:C.purple, margin:"18px 0 8px" }, p: { color:C.dim, fontSize:13, lineHeight:1.7, marginBottom:10 } };
+  const S = { h:{fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.purple,margin:"16px 0 6px"}, p:{color:C.dim,fontSize:12,lineHeight:1.7,marginBottom:8} };
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Nunito',sans-serif", padding:"20px 18px", overflowY:"auto" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px",overflowY:"auto"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
         <BackBtn onClick={onBack} color={C.purple}/>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.purple }}>DATA COMPLIANCE</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.purple}}>DATA COMPLIANCE</div>
       </div>
-      <div style={{ maxWidth:480, margin:"0 auto" }}>
-        <div style={{ color:C.dim, fontSize:11, marginBottom:16 }}>COPPA · DPDP Act 2023 · GDPR Compliant</div>
-        {[
-          ["Data We Collect","Child's name, avatar, class, PIN (hashed). Parent's email address. Learning progress, scores, and session data. Device type and app version."],
-          ["How We Use Data","To provide personalised learning experiences. To track academic progress for parents. To improve our question bank and features. We never sell data to third parties."],
-          ["Children's Privacy (COPPA)","We comply with the Children's Online Privacy Protection Act. We collect only data necessary to operate the service. Parents can request deletion of their child's data at any time."],
-          ["India DPDP Act 2023","We comply with India's Digital Personal Data Protection Act 2023. Data is stored in India on Supabase servers. Parents have the right to access, correct, and delete data."],
-          ["Data Storage","All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We use Supabase (hosted in India) for secure data storage. JWT tokens expire after 7 days."],
-          ["Data Retention","Active account data is retained while the account is active. Deleted account data is removed within 30 days. Anonymised analytics may be retained longer."],
-          ["Your Rights","Access your data · Correct inaccuracies · Delete your account · Export your data · Withdraw consent. Contact: privacy@mathmagicapp.in"],
-          ["AI Disclosure","Question hints may be enhanced using AI. No personal child data is shared with AI providers. AI is used only for educational content generation."],
-        ].map(([h,p],i) => <div key={i}><div style={S.h}>{h}</div><p style={S.p}>{p}</p></div>)}
+      <div style={{maxWidth:480,margin:"0 auto"}}>
+        <div style={{color:C.dim,fontSize:11,marginBottom:14}}>COPPA · DPDP Act 2023 · GDPR</div>
+        {[["Data Collected","Child name, avatar, class, PIN. Parent email. Progress and scores. Device type."],
+          ["How We Use It","Personalised learning, progress tracking for parents. Never sold to third parties."],
+          ["Children's Privacy","COPPA compliant. Only necessary data collected. Parents can request deletion anytime."],
+          ["India DPDP 2023","Compliant with India's Digital Personal Data Protection Act 2023. Data stored in India."],
+          ["Security","All data encrypted in transit (TLS 1.3) and at rest (AES-256). JWT tokens expire in 7 days."],
+          ["Your Rights","Access · Correct · Delete · Export your data. Contact: privacy@mathmagicapp.in"],
+          ["AI Disclosure","Hints may use AI. No personal child data shared with AI providers."]
+        ].map(([h,p],i)=><div key={i}><div style={S.h}>{h}</div><p style={S.p}>{p}</p></div>)}
       </div>
     </div>
   );
 }
 
-// ── Settings Screen ───────────────────────────────────────────────
-function Settings({ child, user, onBack, onThemeChange, onLogout, onDeleteAccount, onResetPassword }) {
-  const [section,   setSection]   = useState(null); // null|"theme"|"profile"|"password"
-  const [delConfirm,setDelConfirm]= useState(false);
-  const [pwEmail,   setPwEmail]   = useState(user?.email||"");
-  const [pwSent,    setPwSent]    = useState(false);
-  const [pwLoading, setPwLoading] = useState(false);
-  const [msg,       setMsg]       = useState("");
+// ── Settings ──────────────────────────────────────────────────────
+function Settings({ child, user, onBack, onThemeChange, onLogout }) {
+  const [sec,      setSec]      = useState(null);
+  const [delConf,  setDelConf]  = useState(false);
+  const [pwEmail,  setPwEmail]  = useState(user?.email||"");
+  const [pwSent,   setPwSent]   = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [msg,      setMsg]      = useState("");
 
-  const menuItems = [
-    { icon:"👤", label:"My Profile",      sub:"Name, class, avatar",        action:()=>setSection("profile") },
-    { icon:"🎨", label:"Change Theme",    sub:"6 themes including light",    action:()=>setSection("theme") },
-    { icon:"🔑", label:"Reset Password",  sub:"Send reset link to email",    action:()=>setSection("password") },
-    { icon:"⭐", label:"Rate the App",    sub:"Share your feedback",         action:()=>onBack("rate") },
-    { icon:"🔒", label:"Privacy Policy",  sub:"How we protect your data",    action:()=>onBack("privacy") },
-    { icon:"📋", label:"Terms of Service",sub:"Usage terms and conditions",  action:()=>onBack("terms") },
-    { icon:"🛡️", label:"Data Compliance", sub:"COPPA · DPDP · GDPR",       action:()=>onBack("datapolicy") },
-    { icon:"🚪", label:"Logout",          sub:"Sign out of this device",     action:()=>onLogout(), color:C.orange },
-    { icon:"🗑️", label:"Delete Account",  sub:"Permanently remove all data", action:()=>setDelConfirm(true), color:C.red },
-  ];
-
-  const handleResetPassword = async () => {
-    if (!pwEmail.trim()) { setMsg("Enter your email address"); return; }
-    setPwLoading(true); setMsg("");
+  const handleReset = async () => {
+    if (!pwEmail.trim()) { setMsg("Enter email"); return; }
+    setLoading(true);
     try {
-      const res = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ action:"reset_password", email: pwEmail.trim() }) });
-      const data = await res.json();
-      if (data.ok) { setPwSent(true); setMsg("Reset link sent! Check your email."); }
-      else setMsg(data.error || "Failed to send reset email.");
-    } catch(e) { setMsg("Network error. Please try again."); }
-    setPwLoading(false);
+      const r = await fetch("/api/db",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${db._token||""}`},body:JSON.stringify({action:"reset_password",email:pwEmail.trim()})});
+      const d = await r.json();
+      if (d.ok) { setPwSent(true); setMsg("Reset link sent! Check your email."); }
+      else setMsg(d.error||"Failed.");
+    } catch(e) { setMsg("Network error."); }
+    setLoading(false);
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${db._token||""}`},
-        body: JSON.stringify({ action:"delete_account", user_id: user?.id }) });
-    } catch(e) {}
-    onDeleteAccount();
+  const handleDelete = async () => {
+    try { await fetch("/api/db",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${db._token||""}`},body:JSON.stringify({action:"delete_account",user_id:user?.id})}); } catch(e){}
+    onLogout();
   };
 
-  if (section === "theme") return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Nunito',sans-serif", padding:"20px 18px" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
-        <BackBtn onClick={()=>setSection(null)} color={C.cyan}/>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.cyan }}>CHOOSE THEME</div>
+  if (sec === "theme") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setSec(null)} color={C.cyan}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>CHOOSE THEME</div>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, maxWidth:480, margin:"0 auto" }}>
-        {Object.entries(THEMES).map(([key,t]) => {
-          const cur = localStorage.getItem("mm_theme")||"light";
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,maxWidth:480,margin:"0 auto"}}>
+        {Object.entries(THEMES).map(([key,t])=>{
+          const cur = localStorage.getItem("mm_theme")||"candy";
           return (
-            <button key={key} onClick={() => { localStorage.setItem("mm_theme",key); C=THEMES[key]; if(onThemeChange) onThemeChange(key); setSection(null); SFX.tap(); }} style={{
-              background: cur===key ? `${t.cyan}22` : t.card,
-              border:`2px solid ${cur===key ? t.cyan : t.dim+"44"}`,
-              borderRadius:16, padding:"14px 12px", cursor:"pointer", textAlign:"center",
-              boxShadow: cur===key ? `0 0 16px ${t.cyan}44` : "none",
-            }}>
-              <div style={{ fontSize:26, marginBottom:6 }}>{t.icon}</div>
-              <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:10, color:cur===key?t.cyan:t.dim }}>{t.name}</div>
-              <div style={{ display:"flex", gap:4, justifyContent:"center", marginTop:8 }}>
-                {[t.purple,t.cyan,t.green,t.orange].map((cl,i)=><div key={i} style={{width:12,height:12,borderRadius:"50%",background:cl,border:`1px solid ${t.dim}44`}}/>)}
+            <button key={key} onClick={()=>{ localStorage.setItem("mm_theme",key); C=THEMES[key]; if(onThemeChange) onThemeChange(key); SFX.tap(); setSec(null); }} style={{background:cur===key?`${t.cyan}22`:t.card,border:`2px solid ${cur===key?t.cyan:t.dim+"44"}`,borderRadius:16,padding:"14px 10px",cursor:"pointer",textAlign:"center",boxShadow:cur===key?`0 0 14px ${t.cyan}44`:"none"}}>
+              <div style={{fontSize:24,marginBottom:4}}>{t.icon}</div>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:9,color:cur===key?t.cyan:t.dim}}>{t.name}</div>
+              <div style={{display:"flex",gap:3,justifyContent:"center",marginTop:6}}>
+                {[t.purple,t.cyan,t.green,t.orange].map((cl,i)=><div key={i} style={{width:10,height:10,borderRadius:"50%",background:cl}}/>)}
               </div>
-              {cur===key && <div style={{ fontSize:8, color:t.cyan, fontFamily:"'Orbitron',sans-serif", marginTop:6 }}>✓ ACTIVE</div>}
+              {cur===key&&<div style={{fontSize:8,color:t.cyan,marginTop:4}}>✓ ACTIVE</div>}
             </button>
           );
         })}
@@ -5343,21 +5317,21 @@ function Settings({ child, user, onBack, onThemeChange, onLogout, onDeleteAccoun
     </div>
   );
 
-  if (section === "profile") return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Nunito',sans-serif", padding:"20px 18px" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-        <BackBtn onClick={()=>setSection(null)} color={C.yellow}/>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.yellow }}>MY PROFILE</div>
+  if (sec === "profile") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setSec(null)} color={C.yellow}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.yellow}}>MY PROFILE</div>
       </div>
-      <div style={{ maxWidth:480, margin:"0 auto", textAlign:"center" }}>
-        <div style={{ fontSize:64, marginBottom:12 }}>{child?.avatar||"🧒"}</div>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:20, color:C.yellow, marginBottom:4 }}>{child?.name}</div>
-        <div style={{ color:C.dim, fontSize:13, marginBottom:20 }}>Class {child?.class_num} · Level {child?.level||1}</div>
-        <Card color={C.purple} style={{ textAlign:"left" }}>
-          {[["📧","Email", user?.email||"—"],["🏆","XP", `${child?.xp||0} points`],["🪙","Coins",`${child?.coins||0} coins`],["⭐","Streak",`${child?.streak_days||0} days`],["💎","Plan",child?.is_premium?"Premium ✓":"Free"]].map(([e,l,v],i)=>(
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:i<4?`1px solid ${C.dim}22`:"none" }}>
-              <span style={{ color:C.dim, fontSize:13 }}>{e} {l}</span>
-              <span style={{ color:"white", fontSize:13, fontWeight:700 }}>{v}</span>
+      <div style={{maxWidth:480,margin:"0 auto",textAlign:"center"}}>
+        <div style={{fontSize:60,marginBottom:10}}>{child?.avatar||"🧒"}</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:C.yellow,marginBottom:4}}>{child?.name}</div>
+        <div style={{color:C.dim,fontSize:12,marginBottom:20}}>Class {child?.class_num} · Level {child?.level||1}</div>
+        <Card color={C.purple} style={{textAlign:"left"}}>
+          {[["📧","Email",user?.email||"—"],["🏆","XP",`${child?.xp||0} pts`],["🪙","Coins",`${child?.coins||0}`],["🔥","Streak",`${child?.streak_days||0} days`],["💎","Plan",child?.is_premium?"Premium ✓":"Free"]].map(([e,l,v],i)=>(
+            <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<4?`1px solid ${C.dim}22`:"none"}}>
+              <span style={{color:C.dim,fontSize:13}}>{e} {l}</span>
+              <span style={{color:"white",fontSize:13,fontWeight:700}}>{v}</span>
             </div>
           ))}
         </Card>
@@ -5365,59 +5339,66 @@ function Settings({ child, user, onBack, onThemeChange, onLogout, onDeleteAccoun
     </div>
   );
 
-  if (section === "password") return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Nunito',sans-serif", padding:"20px 18px" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24 }}>
-        <BackBtn onClick={()=>setSection(null)} color={C.cyan}/>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.cyan }}>RESET PASSWORD</div>
+  if (sec === "password") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setSec(null)} color={C.cyan}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>RESET PASSWORD</div>
       </div>
-      <div style={{ maxWidth:480, margin:"0 auto" }}>
-        <Card color={C.cyan} style={{ marginBottom:16 }}>
-          <div style={{ color:C.dim, fontSize:13, marginBottom:14, lineHeight:1.6 }}>A password reset link will be sent to your registered email address.</div>
-          <input value={pwEmail} onChange={e=>setPwEmail(e.target.value)} placeholder="Your email address" style={{ width:"100%", background:C.card2, border:`1.5px solid ${C.cyan}44`, borderRadius:10, padding:"11px 14px", color:"white", fontFamily:"'Nunito',sans-serif", fontSize:14, marginBottom:12, display:"block" }}/>
-          {msg && <div style={{ fontSize:12, color:pwSent?C.green:C.red, marginBottom:10 }}>{msg}</div>}
-          {!pwSent
-            ? <Btn color={C.cyan} loading={pwLoading} onClick={handleResetPassword}>📧 SEND RESET LINK</Btn>
-            : <div style={{ textAlign:"center", color:C.green, fontFamily:"'Orbitron',sans-serif", fontSize:12 }}>✅ CHECK YOUR EMAIL</div>
-          }
+      <div style={{maxWidth:480,margin:"0 auto"}}>
+        <Card color={C.cyan}>
+          <div style={{color:C.dim,fontSize:13,marginBottom:12,lineHeight:1.6}}>A reset link will be sent to your email address.</div>
+          <input value={pwEmail} onChange={e=>setPwEmail(e.target.value)} placeholder="Your email" style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:12,display:"block"}}/>
+          {msg&&<div style={{fontSize:12,color:pwSent?C.green:C.red,marginBottom:10}}>{msg}</div>}
+          {!pwSent?<Btn color={C.cyan} loading={loading} onClick={handleReset}>📧 SEND RESET LINK</Btn>
+            :<div style={{textAlign:"center",color:C.green,fontFamily:"'Orbitron',sans-serif",fontSize:12}}>✅ CHECK YOUR EMAIL</div>}
         </Card>
       </div>
     </div>
   );
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Nunito',sans-serif", padding:"20px 18px" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:6 }}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
         <BackBtn onClick={()=>onBack()} color={C.cyan}/>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.cyan }}>SETTINGS</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>SETTINGS</div>
       </div>
-      <div style={{ textAlign:"center", margin:"16px 0 24px" }}>
-        <div style={{ fontSize:52 }}>{child?.avatar||"🧒"}</div>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.yellow, marginTop:6 }}>{child?.name}</div>
-        <div style={{ color:C.dim, fontSize:11 }}>Class {child?.class_num}</div>
+      <div style={{textAlign:"center",marginBottom:20}}>
+        <div style={{fontSize:48}}>{child?.avatar||"🧒"}</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:14,color:C.yellow,marginTop:6}}>{child?.name}</div>
+        <div style={{color:C.dim,fontSize:11}}>Class {child?.class_num}</div>
       </div>
-      <div style={{ maxWidth:480, margin:"0 auto", display:"flex", flexDirection:"column", gap:8 }}>
-        {menuItems.map((item,i) => (
-          <button key={i} onClick={item.action} style={{ background:C.card, border:`1.5px solid ${(item.color||C.purple)+"33"}`, borderRadius:14, padding:"14px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:14, textAlign:"left", transition:"all 0.15s" }}>
-            <span style={{ fontSize:22, width:32, textAlign:"center" }}>{item.icon}</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontWeight:800, fontSize:14, color:item.color||"white" }}>{item.label}</div>
-              <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{item.sub}</div>
+      <div style={{maxWidth:480,margin:"0 auto",display:"flex",flexDirection:"column",gap:8}}>
+        {[
+          {icon:"👤",label:"My Profile",      sub:"Name, class, XP, coins",       act:()=>setSec("profile")},
+          {icon:"🎨",label:"Change Theme",    sub:"6 themes incl. light modes",    act:()=>setSec("theme")},
+          {icon:"🔑",label:"Reset Password",  sub:"Send reset link to email",      act:()=>setSec("password")},
+          {icon:"⭐",label:"Rate the App",    sub:"Share your experience",         act:()=>onBack("rate")},
+          {icon:"🔒",label:"Privacy Policy",  sub:"How we protect your data",      act:()=>onBack("privacy")},
+          {icon:"📋",label:"Terms of Service",sub:"Usage terms & conditions",      act:()=>onBack("terms")},
+          {icon:"🛡️",label:"Data Compliance", sub:"COPPA · DPDP 2023 · GDPR",    act:()=>onBack("datapolicy")},
+          {icon:"🚪",label:"Logout",          sub:"Sign out of this device",       act:()=>onLogout(), color:C.orange},
+          {icon:"🗑️",label:"Delete Account",  sub:"Permanently remove all data",  act:()=>setDelConf(true), color:C.red},
+        ].map((item,i)=>(
+          <button key={i} onClick={item.act} style={{background:C.card,border:`1.5px solid ${(item.color||C.purple)+"33"}`,borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+            <span style={{fontSize:20,width:28,textAlign:"center"}}>{item.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:800,fontSize:14,color:item.color||"white"}}>{item.label}</div>
+              <div style={{fontSize:11,color:C.dim,marginTop:2}}>{item.sub}</div>
             </div>
-            <span style={{ color:C.dim, fontSize:18 }}>›</span>
+            <span style={{color:C.dim,fontSize:18}}>›</span>
           </button>
         ))}
       </div>
-
-      {delConfirm && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
-          <Card color={C.red} style={{ maxWidth:340, textAlign:"center" }}>
-            <div style={{ fontSize:40, marginBottom:12 }}>⚠️</div>
-            <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:C.red, marginBottom:10 }}>DELETE ACCOUNT?</div>
-            <div style={{ color:C.dim, fontSize:13, marginBottom:20, lineHeight:1.6 }}>This will permanently delete all data for <strong style={{color:"white"}}>{child?.name}</strong> including progress, coins, and streaks. This cannot be undone.</div>
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={()=>setDelConfirm(false)} style={{ flex:1, background:C.card2, border:`1px solid ${C.dim}44`, borderRadius:12, padding:"12px", color:"white", cursor:"pointer", fontFamily:"'Nunito',sans-serif", fontWeight:700 }}>CANCEL</button>
-              <button onClick={handleDeleteAccount} style={{ flex:1, background:`${C.red}22`, border:`1px solid ${C.red}44`, borderRadius:12, padding:"12px", color:C.red, cursor:"pointer", fontFamily:"'Nunito',sans-serif", fontWeight:800 }}>DELETE</button>
+      {delConf&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <Card color={C.red} style={{maxWidth:320,textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:10}}>⚠️</div>
+            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red,marginBottom:8}}>DELETE ACCOUNT?</div>
+            <div style={{color:C.dim,fontSize:12,marginBottom:18,lineHeight:1.6}}>Permanently deletes all data for <strong style={{color:"white"}}>{child?.name}</strong>. Cannot be undone.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setDelConf(false)} style={{flex:1,background:C.card2,border:`1px solid ${C.dim}44`,borderRadius:12,padding:"11px",color:"white",cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>CANCEL</button>
+              <button onClick={handleDelete} style={{flex:1,background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:12,padding:"11px",color:C.red,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:800}}>DELETE</button>
             </div>
           </Card>
         </div>
@@ -5517,6 +5498,8 @@ function GamesHub({ child, onBack }) {
 // ROOT APP
 // ─────────────────────────────────────────────────────────────────────
 export default function App() {
+  const [themeKey,setThemeKey]=useState(localStorage.getItem('mm_theme')||'candy');
+  const handleThemeChange=(key)=>{ C=THEMES[key]||THEMES.candy; setThemeKey(key); };
   const [screen,         setScreen]         = useState("splash");
   const [user,           setUser]           = useState(null);
   const [child,          setChild]          = useState(null);
@@ -5578,7 +5561,7 @@ export default function App() {
   if (screen === "welcome")  return <><GlobalStyles/><Welcome  onRegister={() => setScreen("register")} onLogin={() => setScreen("login")} onPrivacy={() => { setPrevScreen("welcome"); setScreen("privacy"); }}/></>;
   if (screen === "register") return <><GlobalStyles/><Register onBack={() => setScreen("welcome")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
   if (screen === "login")    return <><GlobalStyles/><Login    onBack={() => setScreen("welcome")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
-  if (screen === "home")     return <><GlobalStyles/><Home     child={child} onWorld={goWorld} onAbacus={() => setScreen("abacus")} onGames={() => setScreen("games")} onOlympiad={() => setScreen("olympiad")} onParent={() => setScreen("parent")} onRate={() => setShowRating(true)} onLogout={logout} onFeedback={goFeedback} onSettings={() => setScreen('settings')}/><FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
+  if (screen === "home")     return <><GlobalStyles/><Home     child={child} onWorld={goWorld} onAbacus={() => setScreen("abacus")} onGames={() => setScreen("games")} onOlympiad={() => setScreen("olympiad")} onParent={() => setScreen("parent")} onRate={() => setShowRating(true)} onLogout={logout} onFeedback={goFeedback} onSettings={()=>setScreen('settings')}/><FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
   if (screen === "paywall")  return <><GlobalStyles/><Paywall  world={world} child={child} onBack={() => setScreen("home")} onUnlock={handleUnlock}/></>;
   if (screen === "lessons")  return <><GlobalStyles/><LessonMap world={world} child={child} onBack={() => setScreen("home")} onLesson={l => { setLesson(l); setScreen("game"); }}/></>;
   if (screen === "game")     return <><GlobalStyles/><Game     lesson={lesson} world={world} child={child} setChild={setChild} onBack={() => { db.track("lesson_exit",child?.id,null,{lesson_id:lesson?.id,set_index:lesson?.setIndex}); setScreen("lessons"); }} onDone={() => { db.track("lesson_complete",child?.id,null,{lesson_id:lesson?.id,set_index:lesson?.setIndex}); setScreen("lessons"); }} onNextSet={(si) => { db.track("set_advance",child?.id,null,{lesson_id:lesson?.id,set_index:si}); setLesson(l => ({...l, setIndex:si})); }}/>{ showSOS && <SOSButton onClick={() => goFeedback("bug")}/>}<FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
@@ -5587,14 +5570,13 @@ export default function App() {
   if (screen === "parent")   return <><GlobalStyles/><ParentDash child={child} onBack={() => setScreen("home")}/></>;
   if (screen === "feedback") return <><GlobalStyles/><FeedbackScreen child={child} currentScreen={prevScreen} prefillCategory={feedbackPrefill} onBack={() => setScreen(prevScreen)}/></>;
   if (screen === "games")    return <><GlobalStyles/><GamesHub child={child} onBack={() => setScreen("home")}/></>;
-  if (screen === "privacy")    return <><GlobalStyles/><PrivacyPolicy onBack={() => setScreen(prevScreen||"home")}/></>;
+  if (screen === "privacy")    return <><GlobalStyles/><PrivacyPolicy  onBack={() => setScreen("settings")}/></>;
   if (screen === "terms")      return <><GlobalStyles/><TermsOfService onBack={() => setScreen("settings")}/></>;
-  if (screen === "datapolicy") return <><GlobalStyles/><DataPolicy onBack={() => setScreen("settings")}/></>;
+  if (screen === "datapolicy") return <><GlobalStyles/><DataPolicy     onBack={() => setScreen("settings")}/></>;
   if (screen === "settings")   return <><GlobalStyles/><Settings child={child} user={user}
     onThemeChange={handleThemeChange}
-    onBack={(dest) => { if(dest==="rate") setShowRating(true); else if(dest) setScreen(dest); else setScreen("home"); }}
+    onBack={(dest)=>{ if(dest==="rate") setShowRating(true); else if(dest) setScreen(dest); else setScreen("home"); }}
     onLogout={logout}
-    onDeleteAccount={() => { logout(); }}
   /></>;
   return <><GlobalStyles/><OfflineBanner/></>;
 }
