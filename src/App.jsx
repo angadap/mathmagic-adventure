@@ -87,8 +87,8 @@ function GlobalStyles() {
         @keyframes bFloat{0%,100%{transform:translateY(0)scale(1)}50%{transform:translateY(-10px)scale(1.05)}}
         @keyframes bossW{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
         *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-        body{background:${C.bg};color:${color:textColor()}}
-        input{font-family:'Nunito',sans-serif;outline:none;color:${color:textColor()}}
+        body{background:${C.bg};color:${textColor()}}
+        input{font-family:'Nunito',sans-serif;outline:none;color:${textColor()}}
         input::placeholder{color:${C.dim}}
         ::-webkit-scrollbar{width:3px}
         ::-webkit-scrollbar-thumb{background:#a855f7;border-radius:4px}
