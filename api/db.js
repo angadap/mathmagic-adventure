@@ -1,246 +1,342 @@
 // api/db.js — Vercel Serverless Function
-// All sensitive DB writes go through here server-side
-// Client sends JWT token, server verifies it before any write
+// All DB operations server-side only. JWT verified before every write.
 
+import { notifyNewUser } from "./notify.js";
+
+// ── ENV (all from Vercel environment variables — never in client code) ──
 const SB_URL     = process.env.SUPABASE_URL;
-
-// Telegram notification — free, no dependencies
-async function notifyTelegram(msg) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chat  = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chat) return;
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ chat_id:chat, text:msg, parse_mode:"Markdown" })
-    });
-  } catch(e) {}
-}
 const SB_SERVICE = process.env.SUPABASE_SERVICE_KEY;
 const SB_ANON    = process.env.SUPABASE_ANON_KEY;
 
-// Rate limiter (same pattern as auth.js)
+// ── ALLOWED ORIGINS ────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  "https://mathmagic-virid.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+// ── SECURITY HEADERS (applied to every response) ──────────────────
+function setSecurityHeaders(res, origin) {
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Cache-Control", "no-store");
+}
+
+// ── INPUT VALIDATION ───────────────────────────────────────────────
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isValidUUID  = (s) => typeof s === "string" && UUID_RE.test(s);
+const sanitizeStr  = (s, max = 200) => typeof s === "string" ? s.replace(/[<>]/g, "").slice(0, max).trim() : "";
+const sanitizeInt  = (n, min, max) => { const i = parseInt(n); return isNaN(i) ? min : Math.min(Math.max(i, min), max); };
+
+// ── RATE LIMITER (in-memory — resets on cold start, sufficient for MVP) ──
 const rateLimitMap = new Map();
 function rateLimit(ip, action, maxReq, windowMs) {
   const key = `${ip}:${action}`;
   const now = Date.now();
-  const e = rateLimitMap.get(key) || { count:0, resetAt: now+windowMs };
-  if (now > e.resetAt) { e.count=0; e.resetAt=now+windowMs; }
+  const e = rateLimitMap.get(key) || { count: 0, resetAt: now + windowMs };
+  if (now > e.resetAt) { e.count = 0; e.resetAt = now + windowMs; }
   e.count++;
   rateLimitMap.set(key, e);
-  if (e.count > maxReq) return { limited:true, retryAfter: Math.ceil((e.resetAt-now)/1000) };
-  return { limited:false };
+  if (e.count > maxReq) return { limited: true, retryAfter: Math.ceil((e.resetAt - now) / 1000) };
+  return { limited: false };
 }
 
 const LIMITS = {
-  add_child:     { max:5,  windowMs: 60*60*1000 },   // 5 children per hour
-  save_progress: { max:200, windowMs: 60*60*1000 },  // 200 saves per hour
-  submit_feedback:{ max:10, windowMs: 60*60*1000 },  // 10 feedbacks per hour
-  save_rating:   { max:3,  windowMs: 24*60*60*1000 },// 3 ratings per day
-  default:       { max:60, windowMs: 60*1000 },
+  add_child:       { max: 5,   windowMs: 60 * 60 * 1000 },
+  save_progress:   { max: 200, windowMs: 60 * 60 * 1000 },
+  submit_feedback: { max: 10,  windowMs: 60 * 60 * 1000 },
+  save_rating:     { max: 3,   windowMs: 24 * 60 * 60 * 1000 },
+  delete_account:  { max: 2,   windowMs: 24 * 60 * 60 * 1000 },
+  reset_password:  { max: 3,   windowMs: 60 * 60 * 1000 },
+  default:         { max: 60,  windowMs: 60 * 1000 },
 };
 
-// Verify JWT token with Supabase — returns user or null
+// ── JWT VERIFICATION ───────────────────────────────────────────────
 async function verifyToken(token) {
-  if (!token) return null;
+  if (!token || typeof token !== "string") return null;
   try {
     const res = await fetch(`${SB_URL}/auth/v1/user`, {
-      headers: { "apikey": SB_SERVICE, "Authorization": `Bearer ${token}` }
+      headers: { apikey: SB_SERVICE, Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return null;
     return await res.json();
-  } catch(e) { return null; }
+  } catch { return null; }
 }
 
-// Query Supabase REST (server-side, uses service key — bypasses RLS safely)
-async function sbQuery(table, method, body, params="", useAnon=false) {
+// ── SUPABASE REST HELPER ───────────────────────────────────────────
+async function sbQuery(table, method, body, params = "", useAnon = false) {
   const key = useAnon ? SB_ANON : SB_SERVICE;
   const res = await fetch(`${SB_URL}/rest/v1/${table}${params}`, {
     method,
     headers: {
-      "apikey": key,
-      "Authorization": `Bearer ${key}`,
+      apikey: key,
+      Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
-      "Prefer": method==="POST" ? "return=representation" : "return=minimal",
+      Prefer: method === "POST" ? "return=representation" : "return=minimal",
     },
     body: body ? JSON.stringify(body) : undefined,
   });
   const txt = await res.text();
-  try { return { ok:res.ok, status:res.status, data:JSON.parse(txt) }; }
-  catch(e) { return { ok:res.ok, status:res.status, data:txt }; }
+  try { return { ok: res.ok, status: res.status, data: JSON.parse(txt) }; }
+  catch { return { ok: res.ok, status: res.status, data: txt }; }
 }
 
+// ── OWNERSHIP CHECK ────────────────────────────────────────────────
+async function childBelongsToUser(childId, userId) {
+  if (!isValidUUID(childId) || !isValidUUID(userId)) return false;
+  const r = await sbQuery("children", "GET", null,
+    `?id=eq.${encodeURIComponent(childId)}&parent_id=eq.${encodeURIComponent(userId)}&select=id`);
+  return Array.isArray(r.data) && r.data.length > 0;
+}
+
+// ── MAIN HANDLER ──────────────────────────────────────────────────
 export default async function handler(req, res) {
+  const origin = req.headers.origin || "";
+  setSecurityHeaders(res, origin);
+
+  // CORS preflight
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
     return res.status(200).end();
   }
-  if (req.method !== "POST") return res.status(405).json({ error:"Method not allowed" });
 
-  const origin = req.headers.origin || "";
-  const allowed = ["https://mathmagic-virid.vercel.app","http://localhost:5173","http://localhost:3000"];
-  if (allowed.includes(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // Block unknown origins in production
+  if (origin && !ALLOWED_ORIGINS.includes(origin) && !origin.includes("localhost")) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
 
   const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || "unknown";
   const { action } = req.body || {};
-  if (!action) return res.status(400).json({ error:"Missing action" });
+  if (!action) return res.status(400).json({ error: "Missing action" });
 
-  // Rate limit
   const limit = LIMITS[action] || LIMITS.default;
   const { limited, retryAfter } = rateLimit(ip, action, limit.max, limit.windowMs);
-  if (limited) return res.status(429).json({ error:`Rate limit exceeded. Wait ${retryAfter}s.`, retryAfter });
+  if (limited) return res.status(429).json({ error: `Rate limit exceeded. Wait ${retryAfter}s.`, retryAfter });
 
-  // Extract token from Authorization header
-  const token = req.headers.authorization?.replace("Bearer ","");
+  const token = req.headers.authorization?.replace("Bearer ", "").trim();
 
   try {
-    // ── PUBLIC READS (no auth needed) ──────────────────────────
+    // ── PUBLIC READS (no auth) ─────────────────────────────────
     if (action === "get_questions") {
-      const { lesson_id } = req.body;
-      if (!lesson_id) return res.status(400).json({ error:"lesson_id required" });
-      // lesson_id arrives as "c1-l1_s0" (combined format)
-      const r = await sbQuery("questions","GET",null,`?lesson_id=eq.${encodeURIComponent(lesson_id)}&order=question_index&limit=20`);
+      const lesson_id = sanitizeStr(req.body.lesson_id, 20);
+      if (!lesson_id) return res.status(400).json({ error: "lesson_id required" });
+      const r = await sbQuery("questions", "GET", null,
+        `?lesson_id=eq.${encodeURIComponent(lesson_id)}&order=question_index&limit=20`);
       return res.status(200).json({ data: r.data });
     }
 
     if (action === "get_daily_challenge") {
-      const { class_num, seq_num, is_pool } = req.body;
-      let params;
-      if (seq_num) {
-        // Rotation-based: fetch by seq_num
-        params = `?class_num=eq.${class_num||1}&seq_num=eq.${seq_num}&is_pool=eq.true&limit=1`;
-      } else {
-        // Fallback: fetch all for this class
-        params = `?class_num=eq.${class_num||1}&is_pool=eq.true&order=seq_num&limit=250`;
-      }
-      const r = await sbQuery("daily_challenges","GET",null, params);
+      const class_num = sanitizeInt(req.body.class_num, 1, 5);
+      const seq_num   = req.body.seq_num ? sanitizeInt(req.body.seq_num, 1, 250) : null;
+      const params = seq_num
+        ? `?class_num=eq.${class_num}&seq_num=eq.${seq_num}&is_pool=eq.true&limit=1`
+        : `?class_num=eq.${class_num}&is_pool=eq.true&order=seq_num&limit=250`;
+      const r = await sbQuery("daily_challenges", "GET", null, params);
       const data = Array.isArray(r.data) ? r.data : [];
-      return res.status(200).json({ data: seq_num ? (data[0]||null) : data });
+      return res.status(200).json({ data: seq_num ? (data[0] || null) : data });
     }
 
     if (action === "get_daily_puzzle") {
-      const today = new Date().toISOString().slice(0,10);
-      const r = await sbQuery("daily_puzzles","GET",null,`?date=eq.${today}&limit=1`);
-      return res.status(200).json({ data: Array.isArray(r.data)?r.data[0]:null });
+      const today = new Date().toISOString().slice(0, 10);
+      const r = await sbQuery("daily_puzzles", "GET", null, `?date=eq.${today}&limit=1`);
+      return res.status(200).json({ data: Array.isArray(r.data) ? r.data[0] : null });
     }
 
-    // ── AUTHENTICATED OPERATIONS — verify token first ──────────
+    // ── AUTHENTICATED ──────────────────────────────────────────
     const user = await verifyToken(token);
-    if (!user?.id) return res.status(401).json({ error:"Unauthorized — please log in" });
+    if (!user?.id) return res.status(401).json({ error: "Unauthorized — please log in" });
 
     if (action === "get_children") {
-      const { parent_id } = req.body;
-      if (parent_id !== user.id) return res.status(403).json({ error:"Forbidden" });
-      const r = await sbQuery("children","GET",null,`?parent_id=eq.${encodeURIComponent(parent_id)}&order=created_at`);
+      if (!isValidUUID(req.body.parent_id) || req.body.parent_id !== user.id)
+        return res.status(403).json({ error: "Forbidden" });
+      const r = await sbQuery("children", "GET", null,
+        `?parent_id=eq.${encodeURIComponent(user.id)}&order=created_at`);
       return res.status(200).json({ data: r.data });
     }
 
     if (action === "add_child") {
-      const { name, avatar, class_num, pin_hash } = req.body;
-      if (!name||!pin_hash) return res.status(400).json({ error:"Missing fields" });
-      const r = await sbQuery("children","POST",{
-        parent_id:user.id, name, avatar, class_num, pin_hash,
-        xp:0, level:1, coins:50, streak_days:0, is_premium:false,
-        created_at:new Date().toISOString()
+      const name     = sanitizeStr(req.body.name, 50);
+      const avatar   = sanitizeStr(req.body.avatar, 10);
+      const pin_hash = sanitizeStr(req.body.pin_hash, 100);
+      const class_num = sanitizeInt(req.body.class_num, 1, 5);
+      if (!name || !pin_hash) return res.status(400).json({ error: "Missing fields" });
+
+      const r = await sbQuery("children", "POST", {
+        parent_id: user.id, name, avatar, class_num, pin_hash,
+        xp: 0, level: 1, coins: 50, streak_days: 0, is_premium: false,
+        created_at: new Date().toISOString(),
       });
-      if (!r.ok) return res.status(400).json({ error:"Failed to create child" });
-      const child = Array.isArray(r.data)?r.data[0]:r.data;
-      // Fire-and-forget Telegram notification
-      const classEmoji = ["","🌍","🌙","☄️","⭐","🚀"][class_num]||"🎓";
-      notifyTelegram(`🎉 *New MathMagic User!*\n${avatar||"🧒"} *${name}* | ${classEmoji} Class ${class_num}\n📧 ${user.email||"—"}\n🕐 ${new Date().toLocaleString("en-IN",{timeZone:"Asia/Kolkata"})} IST`).catch(()=>{});
+      if (!r.ok) return res.status(400).json({ error: "Failed to create child" });
+      const child = Array.isArray(r.data) ? r.data[0] : r.data;
+
+      // Telegram notification (fire-and-forget)
+      notifyNewUser({ name, classNum: class_num, avatar, email: user.email }).catch(() => {});
+
       return res.status(200).json({ data: child });
     }
 
     if (action === "save_progress") {
       const { child_id, lesson_id, correct_count, total_questions, stars_earned, xp_earned } = req.body;
-      // Verify child belongs to this user
-      const chk = await sbQuery("children","GET",null,`?id=eq.${encodeURIComponent(child_id)}&parent_id=eq.${encodeURIComponent(user.id)}`);
-      if (!Array.isArray(chk.data)||!chk.data[0]) return res.status(403).json({ error:"Forbidden" });
-      await sbQuery("progress","POST",{
-        child_id, lesson_id, correct_count, total_questions,
-        stars_earned, xp_earned, completed_at:new Date().toISOString()
-      },"?on_conflict=child_id,lesson_id");
-      // Update XP
-      const cur = chk.data[0];
-      const nx = (cur.xp||0)+xp_earned, nc = (cur.coins||0)+Math.floor(xp_earned/10);
-      await sbQuery("children","PATCH",{ xp:nx, coins:nc, level:Math.floor(nx/200)+1, last_active:new Date().toISOString() },`?id=eq.${encodeURIComponent(child_id)}`);
-      return res.status(200).json({ ok:true, xp:nx, coins:nc });
+      if (!isValidUUID(child_id)) return res.status(400).json({ error: "Invalid child_id" });
+      if (!(await childBelongsToUser(child_id, user.id))) return res.status(403).json({ error: "Forbidden" });
+
+      const lid   = sanitizeStr(lesson_id, 30);
+      const xp    = sanitizeInt(xp_earned, 0, 1000);
+      const stars = sanitizeInt(stars_earned, 0, 3);
+
+      await sbQuery("progress", "POST", {
+        child_id, lesson_id: lid,
+        correct_count: sanitizeInt(correct_count, 0, 100),
+        total_questions: sanitizeInt(total_questions, 0, 100),
+        stars_earned: stars, xp_earned: xp,
+        completed_at: new Date().toISOString(),
+      }, "?on_conflict=child_id,lesson_id");
+
+      // Fetch current child to update XP
+      const cur = await sbQuery("children", "GET", null, `?id=eq.${encodeURIComponent(child_id)}&select=xp,coins`);
+      const c = Array.isArray(cur.data) ? cur.data[0] : {};
+      const nx = Math.min((c.xp || 0) + xp, 999999);
+      const nc = Math.min((c.coins || 0) + Math.floor(xp / 10), 999999);
+      await sbQuery("children", "PATCH",
+        { xp: nx, coins: nc, level: Math.floor(nx / 200) + 1, last_active: new Date().toISOString() },
+        `?id=eq.${encodeURIComponent(child_id)}`);
+      return res.status(200).json({ ok: true, xp: nx, coins: nc });
     }
 
-    if (action === "submit_feedback") {
-      const { child_id, child_name, category, description, screen, app_version } = req.body;
-      await sbQuery("feedback","POST",{
-        child_id:child_id||"guest", child_name:child_name||"Unknown",
-        category, description, screen:screen||"unknown",
-        device_info:"", app_version:app_version||"1.0.0",
-        status:"open", created_at:new Date().toISOString()
+    if (action === "get_daily_completion") {
+      const { child_id, date } = req.body;
+      if (!isValidUUID(child_id)) return res.status(400).json({ error: "Invalid child_id" });
+      if (!(await childBelongsToUser(child_id, user.id))) return res.status(403).json({ error: "Forbidden" });
+      const r = await sbQuery("daily_completions", "GET", null,
+        `?child_id=eq.${encodeURIComponent(child_id)}&date=eq.${sanitizeStr(date, 10)}&limit=1`);
+      return res.status(200).json({ data: Array.isArray(r.data) ? r.data : [] });
+    }
+
+    if (action === "complete_daily_challenge") {
+      const { child_id, challenge_id, date, correct } = req.body;
+      if (!isValidUUID(child_id)) return res.status(400).json({ error: "Invalid child_id" });
+      if (!(await childBelongsToUser(child_id, user.id))) return res.status(403).json({ error: "Forbidden" });
+      await sbQuery("daily_completions", "POST", {
+        child_id,
+        challenge_id: challenge_id || null,
+        date: sanitizeStr(date, 10) || new Date().toISOString().slice(0, 10),
+        correct: !!correct,
+        completed_at: new Date().toISOString(),
       });
-      return res.status(200).json({ ok:true });
-    }
-
-    if (action === "save_rating") {
-      const { rating, review } = req.body;
-      if (rating<1||rating>5) return res.status(400).json({ error:"Rating must be 1-5" });
-      await sbQuery("app_ratings","POST",{
-        parent_id:user.id, rating, review:review||"",
-        app_version:"1.0.0", platform:"web", created_at:new Date().toISOString()
-      });
-      return res.status(200).json({ ok:true });
-    }
-
-    if (action === "track_event") {
-      const { child_id, event_type, event_data, session_id } = req.body;
-      // Fire and forget — don't await
-      sbQuery("analytics","POST",{
-        child_id:child_id||null, parent_id:user.id,
-        event_type, event_data:event_data||{},
-        app_version:"1.0.0", platform:"web",
-        session_id:session_id||null, created_at:new Date().toISOString()
-      }).catch(()=>{});
-      return res.status(200).json({ ok:true });
-    }
-
-    if (action === "reset_password") {
-      const { email } = req.body;
-      if (!email) return res.status(400).json({ error:"Email required" });
-      const r = await fetch(`${SB_URL}/auth/v1/recover`,{method:"POST",headers:{"apikey":SB_SERVICE,"Content-Type":"application/json"},body:JSON.stringify({email})});
-      return res.status(200).json({ ok:r.ok });
-    }
-
-    if (action === "delete_account") {
-      const { user_id } = req.body;
-      if (!user?.id || user.id !== user_id) return res.status(403).json({ error:"Forbidden" });
-      const chk = await sbQuery("children","GET",null,`?parent_id=eq.${encodeURIComponent(user_id)}&select=id`);
-      const ids = Array.isArray(chk.data)?chk.data.map(c=>c.id):[];
-      for (const cid of ids) {
-        await sbQuery("progress","DELETE",null,`?child_id=eq.${encodeURIComponent(cid)}`).catch(()=>{});
-        await sbQuery("daily_completions","DELETE",null,`?child_id=eq.${encodeURIComponent(cid)}`).catch(()=>{});
-      }
-      await sbQuery("children","DELETE",null,`?parent_id=eq.${encodeURIComponent(user_id)}`).catch(()=>{});
-      await fetch(`${SB_URL}/auth/v1/admin/users/${encodeURIComponent(user_id)}`,{method:"DELETE",headers:{"apikey":SB_SERVICE,"Authorization":`Bearer ${SB_SERVICE}`}}).catch(()=>{});
-      return res.status(200).json({ ok:true });
+      return res.status(200).json({ ok: true });
     }
 
     if (action === "complete_puzzle") {
       const { child_id, puzzle_id, date, answer_given, correct } = req.body;
-      if (!child_id) return res.status(400).json({ error:"child_id required" });
-      await sbQuery("puzzle_completions","POST",{child_id,puzzle_id:puzzle_id||null,date:date||new Date().toISOString().slice(0,10),answer_given:answer_given||"",correct:correct||false,completed_at:new Date().toISOString()});
-      return res.status(200).json({ ok:true });
+      if (!isValidUUID(child_id)) return res.status(400).json({ error: "Invalid child_id" });
+      if (!(await childBelongsToUser(child_id, user.id))) return res.status(403).json({ error: "Forbidden" });
+      await sbQuery("puzzle_completions", "POST", {
+        child_id, puzzle_id: puzzle_id || null,
+        date: sanitizeStr(date, 10) || new Date().toISOString().slice(0, 10),
+        answer_given: sanitizeStr(answer_given, 200),
+        correct: !!correct,
+        completed_at: new Date().toISOString(),
+      });
+      return res.status(200).json({ ok: true });
     }
 
     if (action === "get_puzzle_completion") {
       const { child_id, date } = req.body;
-      if (!child_id) return res.status(400).json({ error:"child_id required" });
-      const r = await sbQuery("puzzle_completions","GET",null,`?child_id=eq.${encodeURIComponent(child_id)}&date=eq.${date}&limit=1`);
-      return res.status(200).json({ data:Array.isArray(r.data)?r.data:[] });
+      if (!isValidUUID(child_id)) return res.status(400).json({ error: "Invalid child_id" });
+      if (!(await childBelongsToUser(child_id, user.id))) return res.status(403).json({ error: "Forbidden" });
+      const r = await sbQuery("puzzle_completions", "GET", null,
+        `?child_id=eq.${encodeURIComponent(child_id)}&date=eq.${sanitizeStr(date, 10)}&limit=1`);
+      return res.status(200).json({ data: Array.isArray(r.data) ? r.data : [] });
     }
 
-        return res.status(400).json({ error:"Unknown action" });
+    if (action === "submit_feedback") {
+      const { child_id, child_name, category, description, screen, app_version } = req.body;
+      await sbQuery("feedback", "POST", {
+        child_id: sanitizeStr(child_id, 36) || "guest",
+        child_name: sanitizeStr(child_name, 50) || "Unknown",
+        category: sanitizeStr(category, 50),
+        description: sanitizeStr(description, 1000),
+        screen: sanitizeStr(screen, 50) || "unknown",
+        device_info: "",
+        app_version: sanitizeStr(app_version, 20) || "1.0.0",
+        status: "open",
+        created_at: new Date().toISOString(),
+      });
+      return res.status(200).json({ ok: true });
+    }
 
-  } catch(err) {
-    console.error("[db API error]", err);
-    return res.status(500).json({ error:"Server error. Please try again." });
+    if (action === "save_rating") {
+      const rating = sanitizeInt(req.body.rating, 1, 5);
+      if (rating < 1 || rating > 5) return res.status(400).json({ error: "Rating must be 1-5" });
+      await sbQuery("app_ratings", "POST", {
+        parent_id: user.id, rating,
+        review: sanitizeStr(req.body.review, 500) || "",
+        app_version: "1.0.0", platform: "web",
+        created_at: new Date().toISOString(),
+      });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === "track_event") {
+      const { child_id, event_type, event_data, session_id } = req.body;
+      sbQuery("analytics", "POST", {
+        child_id: child_id || null, parent_id: user.id,
+        event_type: sanitizeStr(event_type, 50),
+        event_data: event_data || {},
+        app_version: "1.0.0", platform: "web",
+        session_id: session_id || null,
+        created_at: new Date().toISOString(),
+      }).catch(() => {});
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === "reset_password") {
+      // Uses email from authenticated user's token — prevents resetting other accounts
+      const email = user.email;
+      if (!email) return res.status(400).json({ error: "No email on account" });
+      const r = await fetch(`${SB_URL}/auth/v1/recover`, {
+        method: "POST",
+        headers: { apikey: SB_SERVICE, "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      return res.status(200).json({ ok: r.ok });
+    }
+
+    if (action === "delete_account") {
+      const { user_id } = req.body;
+      if (!isValidUUID(user_id) || user.id !== user_id)
+        return res.status(403).json({ error: "Forbidden" });
+
+      const chk = await sbQuery("children", "GET", null,
+        `?parent_id=eq.${encodeURIComponent(user_id)}&select=id`);
+      const ids = Array.isArray(chk.data) ? chk.data.map((c) => c.id) : [];
+
+      for (const cid of ids) {
+        await sbQuery("progress", "DELETE", null, `?child_id=eq.${encodeURIComponent(cid)}`).catch(() => {});
+        await sbQuery("daily_completions", "DELETE", null, `?child_id=eq.${encodeURIComponent(cid)}`).catch(() => {});
+        await sbQuery("puzzle_completions", "DELETE", null, `?child_id=eq.${encodeURIComponent(cid)}`).catch(() => {});
+      }
+      await sbQuery("children", "DELETE", null, `?parent_id=eq.${encodeURIComponent(user_id)}`).catch(() => {});
+      await fetch(`${SB_URL}/auth/v1/admin/users/${encodeURIComponent(user_id)}`, {
+        method: "DELETE",
+        headers: { apikey: SB_SERVICE, Authorization: `Bearer ${SB_SERVICE}` },
+      }).catch(() => {});
+
+      return res.status(200).json({ ok: true });
+    }
+
+    return res.status(400).json({ error: "Unknown action" });
+
+  } catch (err) {
+    console.error("[db API error]", err.message);
+    return res.status(500).json({ error: "Server error. Please try again." });
   }
 }
