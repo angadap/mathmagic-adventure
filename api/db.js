@@ -98,10 +98,10 @@ export default async function handler(req, res) {
   try {
     // ── PUBLIC READS (no auth needed) ──────────────────────────
     if (action === "get_questions") {
-      const { lesson_id, set_index } = req.body;
+      const { lesson_id } = req.body;
       if (!lesson_id) return res.status(400).json({ error:"lesson_id required" });
-      const r = await sbQuery("questions", "GET", null,
-        `?lesson_id=eq.${encodeURIComponent(lesson_id)}&set_index=eq.${set_index||0}&order=question_index`);
+      // lesson_id arrives as "c1-l1_s0" (combined format)
+      const r = await sbQuery("questions","GET",null,`?lesson_id=eq.${encodeURIComponent(lesson_id)}&order=question_index&limit=20`);
       return res.status(200).json({ data: r.data });
     }
 
