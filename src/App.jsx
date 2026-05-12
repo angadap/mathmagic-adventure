@@ -35,14 +35,20 @@ export class ErrorBoundary extends React.Component {
 // ─────────────────────────────────────────────────────────────────────
 // ── THEMES ────────────────────────────────────────────────────────────
 const THEMES = {
-  light:  { name:"Bright Day",   icon:"☀️", bg:"#f8faff", card:"#ffffff",  card2:"#eef2ff", cyan:"#0ea5e9", purple:"#7c3aed", pink:"#db2777", orange:"#ea580c", yellow:"#d97706", green:"#16a34a", red:"#dc2626", dim:"#64748b" },
-  pastel: { name:"Pastel Kids",  icon:"🌸", bg:"#fff5fb", card:"#ffffff",  card2:"#fce7f3", cyan:"#0891b2", purple:"#9333ea", pink:"#ec4899", orange:"#f97316", yellow:"#ca8a04", green:"#16a34a", red:"#dc2626", dim:"#9d6db5" },
-  candy:  { name:"Candy Pop",    icon:"🍭", bg:"#1a0628", card:"#2d0a3e",  card2:"#3d1050", cyan:"#f472b6", purple:"#c084fc", pink:"#fb7185", orange:"#fb923c", yellow:"#fde047", green:"#4ade80", red:"#f43f5e", dim:"#9d6db5" },
-  space:  { name:"Space Dark",   icon:"🌌", bg:"#04040f", card:"#0d0d2b",  card2:"#10102e", cyan:"#00f5ff", purple:"#a855f7", pink:"#ec4899", orange:"#f97316", yellow:"#fbbf24", green:"#22c55e", red:"#ef4444", dim:"#6b7db3" },
-  jungle: { name:"Jungle Fun",   icon:"🦁", bg:"#0a1f0a", card:"#122212",  card2:"#1a2e18", cyan:"#86efac", purple:"#a3e635", pink:"#fb923c", orange:"#fbbf24", yellow:"#fde047", green:"#4ade80", red:"#f87171", dim:"#5a7a52" },
-  ocean:  { name:"Ocean Splash", icon:"🐬", bg:"#020f20", card:"#051c38",  card2:"#072548", cyan:"#38bdf8", purple:"#818cf8", pink:"#f472b6", orange:"#fb923c", yellow:"#fde047", green:"#34d399", red:"#f87171", dim:"#3a6080" },
+  // ── DEFAULT: Deep Royal — rich purple + gold, premium & kids-friendly ──
+  royal:  { name:"Royal Academy", icon:"👑", bg:"#12002e", card:"#1e0045",  card2:"#2a0060", cyan:"#a78bfa", purple:"#7c3aed", pink:"#f472b6", orange:"#fb923c", yellow:"#fbbf24", green:"#34d399", red:"#f87171", dim:"#7c6b9e" },
+  // ── Cosmic Teal — deep teal + electric accents ──
+  cosmic: { name:"Cosmic Teal",   icon:"🚀", bg:"#00101e", card:"#001c30",  card2:"#00253d", cyan:"#06d6c7", purple:"#818cf8", pink:"#f472b6", orange:"#fb923c", yellow:"#fcd34d", green:"#4ade80", red:"#f87171", dim:"#4a8099" },
+  // ── Sunset Blaze — warm orange + magenta ──
+  sunset: { name:"Sunset Blaze",  icon:"🌅", bg:"#1a0800", card:"#2d1000",  card2:"#3d1800", cyan:"#fb923c", purple:"#e879f9", pink:"#fb7185", orange:"#fbbf24", yellow:"#fde047", green:"#4ade80", red:"#f43f5e", dim:"#9a5a30" },
+  // ── Emerald Forest — deep green + gold ──
+  forest: { name:"Emerald Forest", icon:"🌿", bg:"#001a0e", card:"#002b16",  card2:"#003a1e", cyan:"#34d399", purple:"#a3e635", pink:"#f472b6", orange:"#fb923c", yellow:"#fcd34d", green:"#4ade80", red:"#f87171", dim:"#3a7a55" },
+  // ── Midnight Ocean — deep navy + electric blue ──
+  ocean:  { name:"Midnight Ocean", icon:"🌊", bg:"#000c1a", card:"#001428",  card2:"#001e38", cyan:"#38bdf8", purple:"#818cf8", pink:"#f472b6", orange:"#fb923c", yellow:"#fcd34d", green:"#34d399", red:"#f87171", dim:"#2a5a80" },
+  // ── Candy Pop (dark) ──
+  candy:  { name:"Candy Pop",      icon:"🍭", bg:"#1a0628", card:"#2d0a3e",  card2:"#3d1050", cyan:"#f472b6", purple:"#c084fc", pink:"#fb7185", orange:"#fb923c", yellow:"#fde047", green:"#4ade80", red:"#f43f5e", dim:"#9d6db5" },
 };
-function getThemeColors() { return THEMES[localStorage.getItem("mm_theme")||"light"] || THEMES.light; }
+function getThemeColors() { return THEMES[localStorage.getItem("mm_theme")||"royal"] || THEMES.royal; }
 let C = getThemeColors();
 const isDark = () => !C.bg.startsWith('#f') && !C.bg.startsWith('#e');
 const textColor = () => isDark() ? 'white' : '#1e1e3f';
@@ -87,8 +93,8 @@ function GlobalStyles() {
         @keyframes bFloat{0%,100%{transform:translateY(0)scale(1)}50%{transform:translateY(-10px)scale(1.05)}}
         @keyframes bossW{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
         *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-        body{background:${C.bg};color:${textColor()}}
-        input{font-family:'Nunito',sans-serif;outline:none;color:${textColor()}}
+        body{background:${C.bg}}
+        input{font-family:'Nunito',sans-serif;outline:none;color:white}
         input::placeholder{color:${C.dim}}
         ::-webkit-scrollbar{width:3px}
         ::-webkit-scrollbar-thumb{background:#a855f7;border-radius:4px}
@@ -2355,7 +2361,7 @@ function Inp({ value, onChange, placeholder, type = "text", label, error, onEnte
           style={{
             width:"100%",
             padding:`12px ${isPass ? "44px" : "13px"} 12px 13px`,
-            background:"#07071a",
+            background:C.card2,
             border:`1.5px solid ${error ? C.red + "99" : C.purple + "44"}`,
             borderRadius:12, fontSize:14, fontWeight:600,
           }}
@@ -2395,7 +2401,7 @@ function XPBar({ xp = 0, level = 1 }) {
       <div style={{
         background:`linear-gradient(135deg,${C.purple},${C.pink})`,
         borderRadius:20, padding:"3px 10px", fontSize:10,
-        fontFamily:"'Orbitron',sans-serif", color:textColor(), flexShrink:0,
+        fontFamily:"'Orbitron',sans-serif", color:"white", flexShrink:0,
       }}>LV {level}</div>
       <div style={{ flex:1, background:"rgba(255,255,255,0.07)", borderRadius:7, height:7, overflow:"hidden" }}>
         <div style={{
@@ -2430,7 +2436,7 @@ function PinPad({ pin, setPin, error, shake, onComplete }) {
             border:`2px solid ${shake ? C.red : pin.length > i ? C.cyan : "#181840"}`,
             boxShadow: pin.length > i ? `0 0 14px ${C.cyan}77` : shake ? `0 0 12px ${C.red}66` : "none",
             display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:22, color:textColor(), transition:"all 0.2s",
+            fontSize:22, color:"white", transition:"all 0.2s",
           }}>{pin.length > i ? "●" : ""}</div>
         ))}
       </div>
@@ -2762,7 +2768,7 @@ function Register({ onBack, onDone }) {
       <RegPage step={4} title="CREATE PIN" color={C.yellow} onBack={goBack}>
         <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:10, color:C.dim, letterSpacing:2, marginBottom:4 }}>STEP 4 — SECRET PIN</div>
         <div style={{ color:C.dim, fontSize:12, fontWeight:600, marginBottom:10, lineHeight:1.6 }}>
-          Set a 4-digit PIN for <strong style={{ color:textColor() }}>{name}</strong> to log in.
+          Set a 4-digit PIN for <strong style={{ color:"white" }}>{name}</strong> to log in.
         </div>
         <div style={{ background:`${C.cyan}14`, border:`1px solid ${C.cyan}33`, borderRadius:10, padding:"8px 12px", marginBottom:12 }}>
           <div style={{ color:C.cyan, fontSize:10, fontFamily:"'Orbitron',sans-serif", marginBottom:2 }}>🔐 STEP 4 — ALMOST THERE!</div>
@@ -2869,7 +2875,7 @@ function Login({ onBack, onDone }) {
               >
                 <div style={{ width:48, height:48, background:`${w.color}18`, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:24, border:`1.5px solid ${w.color}33` }}>{k.avatar}</div>
                 <div style={{ textAlign:"left" }}>
-                  <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:13, color:textColor()}}>{k.name}</div>
+                  <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:13, color:"white"}}>{k.name}</div>
                   <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{w.name} · Lv {k.level||1} · {k.xp||0} XP</div>
                 </div>
                 <div style={{ marginLeft:"auto", color:w.color, fontSize:20 }}>›</div>
@@ -2966,7 +2972,7 @@ function Paywall({ world, child, onBack, onUnlock }) {
             }}>
               {p.badge && <div style={{ position:"absolute", top:-9, left:"50%", transform:"translateX(-50%)", background:C.orange, color:"white", fontSize:9, fontFamily:"'Orbitron',sans-serif", padding:"2px 8px", borderRadius:8, whiteSpace:"nowrap" }}>{p.badge}</div>}
               <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:10, color: plan===key ? C.cyan : C.dim, marginBottom:4 }}>{p.label}</div>
-              <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:22, color:textColor()}}>{p.price}</div>
+              <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:22, color:"white"}}>{p.price}</div>
               <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{p.sub}</div>
             </button>
           ))}
@@ -3091,7 +3097,7 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
         {[{e:"⭐",v:totalStars,l:"STARS"},{e:"💰",v:child.coins||0,l:"COINS"},{e:"📚",v:myProgress.length,l:"DONE"}].map((s,i) => (
           <div key={i} style={{ flex:1, background:C.card, borderRadius:13, padding:"9px 6px", textAlign:"center", border:`1px solid ${[C.yellow,C.orange,C.purple][i]}28` }}>
             <div style={{ fontSize:18 }}>{s.e}</div>
-            <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:textColor()}}>{s.v}</div>
+            <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:"white"}}>{s.v}</div>
             <div style={{ fontSize:8, color:C.dim, letterSpacing:1, fontFamily:"'Orbitron',sans-serif" }}>{s.l}</div>
           </div>
         ))}
@@ -3125,7 +3131,7 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
               <div style={{fontSize:28}}>{dqDone?"✅":"🌟"}</div>
               <div style={{flex:1}}>
                 <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:dqDone?C.green:C.yellow,letterSpacing:1}}>DAILY CHALLENGE</div>
-                <div style={{color:textColor(),fontSize:13,fontWeight:700,marginTop:2}}>{dqDone?"Completed today! 🎉":"1 Word Problem · Tap to solve!"}</div>
+                <div style={{color:"white",fontSize:13,fontWeight:700,marginTop:2}}>{dqDone?"Completed today! 🎉":"1 Word Problem · Tap to solve!"}</div>
                 <div style={{fontSize:10,color:C.dim,marginTop:3}}>Resets at midnight · +50 XP</div>
               </div>
               <div style={{color:dqDone?C.green:C.yellow,fontFamily:"'Orbitron',sans-serif",fontSize:11,textAlign:"center"}}><div>{dqDone?"✓":"+50"}</div><div style={{fontSize:8}}>XP</div></div>
@@ -3134,7 +3140,7 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
               <div style={{fontSize:28}}>{dpDone?"🏆":"🧩"}</div>
               <div style={{flex:1}}>
                 <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:dpDone?C.green:C.purple,letterSpacing:1}}>DAILY PUZZLE</div>
-                <div style={{color:textColor(),fontSize:13,fontWeight:700,marginTop:2}}>{dpDone?"Solved today! 🎉":"Brain teaser · New puzzle daily!"}</div>
+                <div style={{color:"white",fontSize:13,fontWeight:700,marginTop:2}}>{dpDone?"Solved today! 🎉":"Brain teaser · New puzzle daily!"}</div>
                 <div style={{fontSize:10,color:C.dim,marginTop:3}}>Resets midnight · +75 XP</div>
               </div>
               <div style={{color:dpDone?C.green:C.purple,fontFamily:"'Orbitron',sans-serif",fontSize:11,textAlign:"center"}}><div>{dpDone?"✓":"+75"}</div><div style={{fontSize:8}}>XP</div></div>
@@ -3244,7 +3250,7 @@ function LessonMap({ world, child, onBack, onLesson }) {
                 <button onClick={() => lessonUnlocked && setExpanded(isExp ? null : lesson.id)}
                   style={{ flex:1, background: done ? `${world.color}0e` : lessonUnlocked ? C.card : C.card2, border:`1.5px solid ${done ? world.color+"44" : lessonUnlocked ? world.color+"1a" : C.dim+"33"}`, borderRadius:13, padding:"10px 13px", cursor: lessonUnlocked ? "pointer" : "not-allowed", textAlign:"left" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:12, color: lessonUnlocked ? textColor() : C.dim }}>L{li+1}: {lesson.title}</div>
+                    <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:12, color: lessonUnlocked ? "white" : C.dim }}>L{li+1}: {lesson.title}</div>
                     <div style={{ display:"flex", gap:5, alignItems:"center" }}>
                       <span style={{ fontSize:9, color:C.dim, fontFamily:"'Orbitron',sans-serif" }}>{cSets}/20 sets</span>
                       <span style={{ fontSize:13, color: lessonUnlocked ? world.color : C.dim }}>{isExp ? "▲" : "▼"}</span>
@@ -3435,7 +3441,7 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
         </div>
         <Card color={C.purple} style={{ marginBottom:16, textAlign:"center", padding:"14px 26px" }}>
           <div style={{ color:C.dim, fontSize:10, fontFamily:"'Orbitron',sans-serif", letterSpacing:1 }}>SCORE</div>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:38, color:textColor()}}>{fs}<span style={{ fontSize:15, color:C.dim }}>/{questions.length}</span></div>
+          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:38, color:"white"}}>{fs}<span style={{ fontSize:15, color:C.dim }}>/{questions.length}</span></div>
           <div style={{ color:C.yellow, fontWeight:700, fontSize:12, marginTop:3 }}>+{fs*20+(mode==="boss"?50:0)} XP · +{fst*10} COINS</div>
           <div style={{ color:C.green, fontSize:9, marginTop:4, fontFamily:"'Orbitron',sans-serif" }}>✅ PROGRESS SAVED</div>
         </Card>
@@ -3493,7 +3499,7 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
         <div style={{ fontSize:58, animation:"bossW 1.5s ease-in-out infinite", marginBottom:10 }}>{lesson.boss||"👾"}</div>
         {burst && <div style={{ fontSize:13, color:C.green, marginBottom:6, fontFamily:"'Orbitron',sans-serif", position:"fixed", top:"20%", left:"50%", transform:"translateX(-50%)", zIndex:998, background:`${C.green}22`, borderRadius:12, padding:"8px 20px" }}>⚡ HIT! Boss HP: {bossHp}%</div>}
         <Card color={C.red} style={{ marginBottom:12, padding:"16px 14px", textAlign:"left" }}>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:textColor(), lineHeight:1.5 }}>{q.q}</div>
+          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:"white", lineHeight:1.5 }}>{q.q}</div>
         </Card>
         <div style={{ fontSize:9, color:C.dim, fontFamily:"'Orbitron',sans-serif", marginBottom:8 }}>Q {qi+1}/{questions.length} · Score: {score}</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
@@ -3520,7 +3526,7 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
       </div>
       <div style={{ position:"relative", zIndex:2, padding:"18px 18px", textAlign:"center" }}>
         <Card color={world.color} style={{ marginBottom:18, padding:"14px" }}>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:textColor()}}>{q.q}</div>
+          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:"white"}}>{q.q}</div>
           <div style={{ color:C.dim, fontSize:11, marginTop:5, fontFamily:"'Orbitron',sans-serif" }}>TAP THE CORRECT BUBBLE!</div>
         </Card>
         <div style={{ display:"flex", flexWrap:"wrap", gap:16, justifyContent:"center", marginTop:10 }}>
@@ -3566,14 +3572,14 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
           <div style={{position:"fixed",top:"28%",left:"50%",transform:"translateX(-50%)",zIndex:999,pointerEvents:"none",textAlign:"center",animation:"popIn 0.35s ease"}}>
             <div style={{background:`linear-gradient(135deg,${C.green},#16a34a)`,borderRadius:20,padding:"14px 32px",boxShadow:`0 0 40px ${C.green}88`}}>
               <div style={{fontSize:30,marginBottom:2}}>🎉</div>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22, color:textColor(),letterSpacing:2}}>CORRECT!</div>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22, color:"white",letterSpacing:2}}>CORRECT!</div>
               <div style={{fontSize:12,color:"#bbf7d0",marginTop:2}}>+20 XP</div>
             </div>
           </div>
         )}
         <Card color={world.color} style={{ textAlign:"center", padding:"18px 14px", marginBottom:12, transform: burst?"scale(1.02)":"scale(1)", transition:"transform 0.2s" }}>
           <div style={{ fontSize:34, marginBottom:8 }}>{lesson.emoji}</div>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:16, color:textColor(), lineHeight:1.4 }}>{q.q}</div>
+          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:16, color:"white", lineHeight:1.4 }}>{q.q}</div>
           {/* correct shown via overlay below */}
         </Card>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
@@ -3871,7 +3877,7 @@ function Olympiad({ child, setChild, onBack }) {
       </div>
       <div style={{ position:"relative", zIndex:2, padding:"14px 18px" }}>
         <Card color={C.purple} style={{ marginBottom:14, padding:"18px 14px" }}>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:textColor(), lineHeight:1.5 }}>{question.q}</div>
+          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:"white", lineHeight:1.5 }}>{question.q}</div>
         </Card>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
           {question.opts.map((opt, i) => {
@@ -3907,7 +3913,7 @@ function Olympiad({ child, setChild, onBack }) {
           {pct>=80?"BRILLIANT!":pct>=60?"WELL DONE!":pct>=40?"GOOD TRY!":"KEEP GOING!"}
         </div>
         <Card color={C.purple} style={{ marginBottom:14, textAlign:"center" }}>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:36, color:textColor()}}>{score}<span style={{ fontSize:14, color:C.dim }}>/{total}</span></div>
+          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:36, color:"white"}}>{score}<span style={{ fontSize:14, color:C.dim }}>/{total}</span></div>
           <div style={{ color:C.yellow, fontSize:13, fontWeight:700, marginTop:3 }}>+{score*25} XP · +{score*5} COINS</div>
           <div style={{ marginTop:8, background:"rgba(255,255,255,0.06)", borderRadius:6, height:8, overflow:"hidden" }}>
             <div style={{ width:`${pct}%`, height:"100%", background:`linear-gradient(90deg,${pct>=60?C.green:C.orange},${C.cyan})`, borderRadius:6 }}/>
@@ -3971,7 +3977,7 @@ function ParentDash({ child, onBack }) {
         <Card color={C.purple} style={{ marginBottom:12, display:"flex", alignItems:"center", gap:14 }}>
           <div style={{ fontSize:42 }}>{child.avatar}</div>
           <div>
-            <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:textColor()}}>{child.name}</div>
+            <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:"white"}}>{child.name}</div>
             <div style={{ color:C.dim, fontSize:12, marginTop:2 }}>{WORLDS[(child.class_num||1)-1].name} · Level {child.level||1}</div>
             <div style={{ color: child.is_premium ? C.yellow : C.dim, fontSize:11, marginTop:2, fontWeight:700 }}>{child.is_premium ? "⭐ Premium" : "Free Plan"}</div>
           </div>
@@ -3980,7 +3986,7 @@ function ParentDash({ child, onBack }) {
           {[{e:"⭐",v:totalStars,l:"Stars",c:C.yellow},{e:"📚",v:progress.length,l:"Done",c:C.cyan},{e:"🎯",v:`${acc}%`,l:"Accuracy",c:C.green},{e:"💎",v:child.xp||0,l:"Total XP",c:C.purple}].map((s,i) => (
             <Card key={i} color={s.c} style={{ textAlign:"center", padding:"11px 8px" }}>
               <div style={{ fontSize:22, marginBottom:3 }}>{s.e}</div>
-              <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:17, color:textColor()}}>{s.v}</div>
+              <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:17, color:"white"}}>{s.v}</div>
               <div style={{ fontSize:9, color:C.dim, fontFamily:"'Orbitron',sans-serif" }}>{s.l}</div>
             </Card>
           ))}
@@ -4063,7 +4069,7 @@ function AnalyticsCard({ childId }) {
           <div key={label} style={{background:"rgba(255,255,255,0.04)",borderRadius:10,padding:"8px 10px",display:"flex",gap:8,alignItems:"center"}}>
             <span style={{fontSize:18}}>{icon}</span>
             <div>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:14, color:textColor()}}>{val}</div>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:14, color:"white"}}>{val}</div>
               <div style={{color:C.dim,fontSize:9}}>{label}</div>
             </div>
           </div>
@@ -4133,7 +4139,7 @@ function FeedbackScreen({ child, currentScreen, onBack, prefillCategory }) {
           <div style={{ fontSize:10, color:C.green, fontFamily:"'Orbitron',sans-serif", marginBottom:6 }}>YOUR REPORT</div>
           <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4 }}>
             <span style={{ fontSize:16 }}>{FEEDBACK_CATS.find(c=>c.id===cat)?.icon}</span>
-            <span style={{ color:textColor(), fontSize:12, fontWeight:700 }}>{FEEDBACK_CATS.find(c=>c.id===cat)?.label}</span>
+            <span style={{ color:"white", fontSize:12, fontWeight:700 }}>{FEEDBACK_CATS.find(c=>c.id===cat)?.label}</span>
           </div>
           <div style={{ color:C.dim, fontSize:11, lineHeight:1.5 }}>{desc.substring(0, 100)}{desc.length>100?"…":""}</div>
         </Card>
@@ -4187,9 +4193,9 @@ function FeedbackScreen({ child, currentScreen, onBack, prefillCategory }) {
             maxLength={500}
             rows={5}
             style={{
-              width:"100%", padding:"13px", background:"#07071a",
+              width:"100%", padding:"13px", background:C.card2,
               border:`1.5px solid ${C.purple}44`, borderRadius:13,
-              color:textColor(), fontSize:13, fontFamily:"'Nunito',sans-serif",
+              color:"white", fontSize:13, fontFamily:"'Nunito',sans-serif",
               resize:"none", outline:"none", lineHeight:1.6,
               boxSizing:"border-box",
             }}
@@ -4382,7 +4388,7 @@ function NumberRocket({ onBack, child }) {
       <div style={{position:"relative",zIndex:1,textAlign:"center"}}>
         <div style={{fontSize:72,marginBottom:8}}>{result==="win"?"🚀":"💥"}</div>
         <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:result==="win"?C.green:C.red,marginBottom:8}}>{result==="win"?"LAUNCH SUCCESS!":"ROCKET CRASHED!"}</div>
-        <div style={{color:textColor(),fontSize:28,fontFamily:"'Orbitron',sans-serif",marginBottom:16}}>{score}/{TOTAL}</div>
+        <div style={{color:"white",fontSize:28,fontFamily:"'Orbitron',sans-serif",marginBottom:16}}>{score}/{TOTAL}</div>
         <div style={{display:"flex",gap:10}}>
           <Btn color={C.dim} style={{flex:1}} onClick={onBack}>← BACK</Btn>
           <Btn color={C.cyan} style={{flex:1}} onClick={()=>{setScore(0);setRound(1);setResult(null);genQ();}}>↺ RETRY</Btn>
@@ -4412,7 +4418,7 @@ function NumberRocket({ onBack, child }) {
           <div style={{fontSize:64,animation:fuel<30?"shakeX 0.3s ease infinite":"bFloat 2s ease-in-out infinite"}}>{fuel<30?"💥":"🚀"}</div>
         </div>
         <Card color={C.orange} style={{textAlign:"center",marginBottom:18,padding:"18px"}}>
-          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22, color:textColor()}}>{q}</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22, color:"white"}}>{q}</div>
         </Card>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
           {opts.map((o,i)=>{
@@ -4530,7 +4536,7 @@ function StarCatcher({ onBack, child }) {
       <div style={{position:"relative",zIndex:1,textAlign:"center"}}>
         <div style={{fontSize:64,marginBottom:8}}>🌟</div>
         <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:C.yellow,marginBottom:8}}>GAME OVER!</div>
-        <div style={{color:textColor(),fontSize:36,fontFamily:"'Orbitron',sans-serif",marginBottom:16}}>Score: {score}</div>
+        <div style={{color:"white",fontSize:36,fontFamily:"'Orbitron',sans-serif",marginBottom:16}}>Score: {score}</div>
         <div style={{display:"flex",gap:10}}>
           <Btn color={C.dim} style={{flex:1}} onClick={onBack}>← BACK</Btn>
           <Btn color={C.yellow} style={{flex:1}} onClick={startGame}>↺ PLAY AGAIN</Btn>
@@ -4552,7 +4558,7 @@ function StarCatcher({ onBack, child }) {
       </div>
       {/* Question */}
       <div style={{position:"relative",zIndex:10,textAlign:"center",padding:"12px 18px"}}>
-        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20, color:textColor()}}>{q}</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20, color:"white"}}>{q}</div>
       </div>
       {/* Play field */}
       <div style={{position:"relative",height:"65vh",overflow:"hidden",background:"transparent",touchAction:"none"}}
@@ -4646,7 +4652,7 @@ function MathMaze({ onBack, child }) {
       <div style={{position:"relative",zIndex:1,textAlign:"center"}}>
         <div style={{fontSize:72,marginBottom:8}}>🏆</div>
         <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:C.green,marginBottom:8}}>MAZE COMPLETE!</div>
-        <div style={{color:textColor(),fontSize:28,fontFamily:"'Orbitron',sans-serif",marginBottom:16}}>{score}/{STEPS} correct</div>
+        <div style={{color:"white",fontSize:28,fontFamily:"'Orbitron',sans-serif",marginBottom:16}}>{score}/{STEPS} correct</div>
         <div style={{display:"flex",gap:10}}>
           <Btn color={C.dim} style={{flex:1}} onClick={onBack}>← BACK</Btn>
           <Btn color={C.green} style={{flex:1}} onClick={()=>{setStep(0);setScore(0);setDone(false);setChosen(null);shuffledQs.current=shuffle(QUESTIONS);}}>↺ AGAIN</Btn>
@@ -4676,7 +4682,7 @@ function MathMaze({ onBack, child }) {
           <div style={{width:32,height:32,borderRadius:8,background:"#0a0a20",border:`2px solid ${C.yellow}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🏆</div>
         </div>
         <Card color={C.green} style={{textAlign:"center",marginBottom:18,padding:"20px",animation:shake?"shakeX 0.4s ease":"none"}}>
-          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20, color:textColor(),marginBottom:4}}>🧑‍🚀 Solve to move forward!</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20, color:"white",marginBottom:4}}>🧑‍🚀 Solve to move forward!</div>
           <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:26,color:C.green}}>{curQ.q}</div>
         </Card>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -4791,7 +4797,7 @@ function SpeedMath({ onBack, child }) {
       </div>
       <div style={{position:"relative",zIndex:2,padding:"24px 18px"}}>
         <Card color={C.yellow} style={{textAlign:"center",marginBottom:20,padding:"22px"}}>
-          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:28, color:textColor()}}>{q}</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:28, color:"white"}}>{q}</div>
         </Card>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
           {opts.map((o,i)=>(
@@ -4859,7 +4865,7 @@ function NumberMemory({ onBack, child }) {
       <div style={{position:"relative",zIndex:1,textAlign:"center"}}>
         <div style={{fontSize:64,marginBottom:8}}>{result==="win"?"🧠":"💫"}</div>
         <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:18,color:result==="win"?C.green:C.red,marginBottom:8}}>{result==="win"?"CORRECT!":"WRONG!"}</div>
-        {result==="lose"&&<div style={{color:C.dim,fontSize:13,marginBottom:8}}>The sequence was: <span style={{color:textColor(),fontWeight:700}}>{sequence.join(", ")}</span></div>}
+        {result==="lose"&&<div style={{color:C.dim,fontSize:13,marginBottom:8}}>The sequence was: <span style={{color:"white",fontWeight:700}}>{sequence.join(", ")}</span></div>}
         {result==="lose"&&<div style={{color:C.dim,fontSize:13,marginBottom:12}}>You entered: <span style={{color:C.red}}>{input.join(", ")}</span></div>}
         <div style={{display:"flex",gap:10}}>
           <Btn color={C.dim} style={{flex:1}} onClick={()=>setPhase("ready")}>← BACK</Btn>
@@ -5119,7 +5125,7 @@ function DailyPuzzle({ child, onClose }) {
               <div style={{fontSize:11,color:C.dim}}>+{puzzle.xp_reward||75} XP on solve</div>
             </div>
 
-            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:14, color:textColor(),marginBottom:10}}>{puzzle.title}</div>
+            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:14, color:"white",marginBottom:10}}>{puzzle.title}</div>
             <div style={{background:`${C.purple}10`,border:`1px solid ${C.purple}22`,borderRadius:14,padding:"14px 16px",marginBottom:18,lineHeight:1.8,fontSize:14,color:"#ddd"}}>
               🧩 {puzzle.description}
             </div>
@@ -5218,7 +5224,7 @@ function RatingPrompt({ child, onClose }) {
         </div>
         {rating > 0 && (
           <div style={{marginBottom:14}}>
-            <div style={{color:textColor(),fontSize:13,fontWeight:700,marginBottom:6,textAlign:"center"}}>
+            <div style={{color:"white",fontSize:13,fontWeight:700,marginBottom:6,textAlign:"center"}}>
               {["","😞 Poor","😐 Fair","🙂 Good","😊 Great","🤩 Amazing!"][rating]}
             </div>
             <textarea value={review} onChange={e=>setReview(e.target.value)}
@@ -5340,7 +5346,7 @@ function Settings({ child, user, onBack, onThemeChange, onLogout }) {
         <Card color={C.purple} style={{textAlign:"left"}}>
           {[["📧","Email",user?.email||"—"],["🏆","XP",`${child?.xp||0} pts`],["🪙","Coins",`${child?.coins||0}`],["🔥","Streak",`${child?.streak_days||0} days`],["💎","Plan",child?.is_premium?"Premium ✓":"Free"]].map(([e,l,v],i)=>(
             <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:i<4?`1px solid ${C.dim}22`:"none"}}>
-              <span style={{color:C.dim,fontSize:13}}>{e} {l}</span><span style={{color:textColor(),fontSize:13,fontWeight:700}}>{v}</span>
+              <span style={{color:C.dim,fontSize:13}}>{e} {l}</span><span style={{color:"white",fontSize:13,fontWeight:700}}>{v}</span>
             </div>
           ))}
         </Card>
@@ -5356,7 +5362,7 @@ function Settings({ child, user, onBack, onThemeChange, onLogout }) {
       <div style={{maxWidth:480,margin:"0 auto"}}>
         <Card color={C.cyan}>
           <div style={{color:C.dim,fontSize:13,marginBottom:12,lineHeight:1.6}}>A reset link will be sent to your email address.</div>
-          <input value={pwEmail} onChange={e=>setPwEmail(e.target.value)} placeholder="Your email" style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"11px 14px",color:textColor(),fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:12,display:"block"}}/>
+          <input value={pwEmail} onChange={e=>setPwEmail(e.target.value)} placeholder="Your email" style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:12,display:"block"}}/>
           {msg&&<div style={{fontSize:12,color:pwSent?C.green:C.red,marginBottom:10}}>{msg}</div>}
           {!pwSent?<Btn color={C.cyan} loading={loading} onClick={handleReset}>📧 SEND RESET LINK</Btn>
             :<div style={{textAlign:"center",color:C.green,fontFamily:"'Orbitron',sans-serif",fontSize:12}}>✅ CHECK YOUR EMAIL</div>}
@@ -5399,7 +5405,7 @@ function Settings({ child, user, onBack, onThemeChange, onLogout }) {
           <Card color={C.red} style={{maxWidth:320,textAlign:"center"}}>
             <div style={{fontSize:36,marginBottom:10}}>⚠️</div>
             <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red,marginBottom:8}}>DELETE ACCOUNT?</div>
-            <div style={{color:C.dim,fontSize:12,marginBottom:18,lineHeight:1.6}}>Permanently deletes all data for <strong style={{color:textColor()}}>{child?.name}</strong>. Cannot be undone.</div>
+            <div style={{color:C.dim,fontSize:12,marginBottom:18,lineHeight:1.6}}>Permanently deletes all data for <strong style={{color:"white"}}>{child?.name}</strong>. Cannot be undone.</div>
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setDelConf(false)} style={{flex:1,background:C.card2,border:`1px solid ${C.dim}44`,borderRadius:12,padding:"11px",color:"white",cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>CANCEL</button>
               <button onClick={handleDelete} style={{flex:1,background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:12,padding:"11px",color:C.red,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:800}}>DELETE</button>
@@ -5419,7 +5425,7 @@ function PrivacyPolicy({ onBack }) {
         <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>PRIVACY POLICY</div>
       </div>
       <div style={{padding:"20px 20px 40px",maxWidth:600,margin:"0 auto",color:"#ccc",lineHeight:1.8,fontSize:14}}>
-        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:16, color:textColor(),marginBottom:6}}>MathMagic Space Academy</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:16, color:"white",marginBottom:6}}>MathMagic Space Academy</div>
         <div style={{color:C.dim,fontSize:12,marginBottom:24}}>Last updated: {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</div>
 
         {[
@@ -5437,7 +5443,7 @@ function PrivacyPolicy({ onBack }) {
           {t:"12. Contact & Updates",b:["Privacy Officer: privacy@mathmagicacademy.in","Support: Available via the SOS/Feedback feature in the app","Policy updates: Users notified via in-app notification","Effective date: "+new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}),"Governing law: Information Technology Act 2000 and DPDP Act 2023 (India)"]},
         ].map(({t,b},i)=>(
           <div key={i} style={{marginBottom:20}}>
-            <div style={{fontWeight:800,color:textColor(),fontSize:14,marginBottom:6,lineHeight:1.4}}>{t}</div>
+            <div style={{fontWeight:800,color:"white",fontSize:14,marginBottom:6,lineHeight:1.4}}>{t}</div>
             <div style={{color:"#bbb"}}>{b.map((line,j)=><div key={j} style={{marginBottom:3,lineHeight:1.6,fontSize:13}}>{line}</div>)}</div>
           </div>
         ))
