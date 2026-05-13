@@ -2850,17 +2850,7 @@ function Login({ onBack, onDone }) {
           style={{ marginTop:14, width:"100%", background:`${C.purple}14`, border:`1px dashed ${C.purple}44`, borderRadius:10, padding:"9px", color:C.purple, fontSize:11, cursor:"pointer", fontFamily:"'Orbitron',sans-serif", letterSpacing:1 }}>
           🛸 ADMIN LOGIN (DEV MODE)
         </button>
-        <div style={{ marginTop:16, display:"flex", flexDirection:"column", gap:8 }}>
-          <button onClick={()=>{window._setScreen&&window._setScreen("student_login");}} style={{width:"100%",background:`${C.cyan}15`,border:`1px solid ${C.cyan}33`,borderRadius:14,padding:"12px",cursor:"pointer",color:C.cyan,fontFamily:"'Nunito',sans-serif",fontWeight:800,fontSize:13}}>
-            🏫 School Student Login
-          </button>
-          <button onClick={()=>{window._setScreen&&window._setScreen("teacher_login");}} style={{width:"100%",background:`${C.yellow}15`,border:`1px solid ${C.yellow}33`,borderRadius:14,padding:"12px",cursor:"pointer",color:C.yellow,fontFamily:"'Nunito',sans-serif",fontWeight:800,fontSize:13}}>
-            👨‍🏫 Teacher Login
-          </button>
-          <button onClick={()=>{window._setScreen&&window._setScreen("admin_panel");}} style={{width:"100%",background:`${C.red}15`,border:`1px dashed ${C.red}33`,borderRadius:14,padding:"10px",cursor:"pointer",color:C.red,fontFamily:"'Orbitron',sans-serif",fontSize:10}}>
-            🔐 ADMIN PANEL
-          </button>
-        </div>
+        <div style={{height:8}}/>
       </div>
     </div>
   );
@@ -5428,6 +5418,43 @@ function Settings({ child, user, onBack, onThemeChange, onLogout }) {
 }
 
 
+
+// ── EntryScreen — clean role selector ────────────────────────────
+function EntryScreen({ onSelect }) {
+  useEffect(()=>{ SFX.screenIn(); },[]);
+  const roles = [
+    { icon:"🧒", label:"I'm a Student",    sub:"School login",          screen:"student_login", color:C.cyan   },
+    { icon:"👨‍👩‍👧", label:"I'm a Parent",     sub:"Home learning",         screen:"welcome",       color:C.purple },
+    { icon:"👨‍🏫", label:"I'm a Teacher",    sub:"Manage my class",       screen:"teacher_login", color:C.yellow },
+    { icon:"🔐", label:"Admin",             sub:"School management",     screen:"admin_panel",   color:C.red    },
+  ];
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 18px",position:"relative"}}>
+      <Starfield n={30}/>
+      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:420}}>
+        <div style={{textAlign:"center",marginBottom:32}}>
+          <div style={{fontSize:52,marginBottom:8}}>🚀</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:20,color:C.yellow,letterSpacing:2}}>MATHMAGIC</div>
+          <div style={{color:C.dim,fontSize:13,marginTop:4}}>Space Academy</div>
+        </div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.dim,textAlign:"center",marginBottom:16}}>WHO ARE YOU?</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {roles.map((r,i)=>(
+            <button key={i} onClick={()=>{SFX.tap();onSelect(r.screen);}} style={{background:`${r.color}15`,border:`1.5px solid ${r.color}44`,borderRadius:16,padding:"16px 18px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,transition:"all 0.15s",textAlign:"left"}}>
+              <span style={{fontSize:28}}>{r.icon}</span>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:800,fontSize:15,color:"white"}}>{r.label}</div>
+                <div style={{fontSize:12,color:C.dim,marginTop:2}}>{r.sub}</div>
+              </div>
+              <span style={{color:r.color,fontSize:20}}>›</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── School API helper ─────────────────────────────────────────────
 const schoolApi = async (action, body={}, adminKey=null) => {
   const headers = {"Content-Type":"application/json"};
@@ -5533,7 +5560,7 @@ function TeacherLogin({ onBack, onDone }) {
     setLoading(true); setError("");
     try {
       const d = await schoolApi("teacher_login", {email:email.trim().toLowerCase(), pin});
-      if (d.teacher) { SFX.select(); onDone(d.teacher); }
+      if (d.teacher) { SFX.select(); localStorage.setItem('mm_teacher_session', JSON.stringify({...d.teacher, session_token:d.session_token})); onDone({...d.teacher, session_token:d.session_token}); }
       else setError(d.error||"Invalid credentials");
     } catch(e) { setError("Network error"); }
     setLoading(false);
@@ -5580,7 +5607,7 @@ function TeacherDashboard({ teacher, onLogout }) {
   const load = async () => {
     setLoading(true);
     try {
-      const d = await schoolApi("get_class_dashboard",{teacher_id:teacher.id,teacher_pin:localStorage.getItem("t_pin")||""});
+      const d = await schoolApi("get_class_dashboard",{teacher_id:teacher.id,session_token:teacher.session_token||""});
       if (d.data) setStudents(d.data); else setError(d.error||"Failed to load");
     } catch(e) { setError("Network error"); }
     setLoading(false);
@@ -5592,7 +5619,7 @@ function TeacherDashboard({ teacher, onLogout }) {
     if (!form.name.trim()||!form.roll_no.trim()||form.pin.length<4) { setSaveMsg("Fill all fields + 4-digit PIN"); return; }
     setSaving(true); setSaveMsg("");
     try {
-      const d = await schoolApi("create_student",{...form,teacher_id:teacher.id,teacher_pin:localStorage.getItem("t_pin")||""});
+      const d = await schoolApi("create_student",{...form,teacher_id:teacher.id,session_token:teacher.session_token||""});
       if (d.data) { setSaveMsg("✅ Student added!"); setForm({...form,name:"",roll_no:"",pin:""}); load(); }
       else setSaveMsg(d.error||"Failed");
     } catch(e) { setSaveMsg("Network error"); }
@@ -5667,8 +5694,97 @@ function TeacherDashboard({ teacher, onLogout }) {
             {!loading&&students.length===0&&<div style={{textAlign:"center",color:C.dim,padding:30}}>No students yet. Add your first student!</div>}
           </div>
         )}
+
+        {view==="import" && (
+          <ExcelImport teacher={teacher} onDone={()=>{setView("list");load();}}/>
+        )}
       </div>
     </div>
+  );
+}
+
+// ── ExcelImport Component ─────────────────────────────────────────
+function ExcelImport({ teacher, onDone }) {
+  const [file,    setFile]    = useState(null);
+  const [preview, setPreview] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [result,  setResult]  = useState(null);
+  const [error,   setError]   = useState("");
+
+  const parseCSV = (text) => {
+    const lines = text.trim().split("\n").filter(l=>l.trim());
+    const headers = lines[0].toLowerCase().split(",").map(h=>h.trim().replace(/"/g,""));
+    return lines.slice(1).map(line => {
+      const vals = line.split(",").map(v=>v.trim().replace(/"/g,""));
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = vals[i]||"");
+      return {
+        name:     obj.name||obj["student name"]||obj["full name"]||"",
+        roll_no:  String(obj.roll_no||obj["roll no"]||obj["roll number"]||obj.roll||""),
+        class_num:parseInt(obj.class||obj["class num"]||obj.class_num||teacher.class_num||1),
+        section:  (obj.section||"A").toUpperCase(),
+        pin:      String(obj.pin||obj["4-digit pin"]||obj.password||"1234"),
+      };
+    }).filter(r=>r.name&&r.roll_no);
+  };
+
+  const handleFile = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setFile(f); setResult(null); setError("");
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try { setPreview(parseCSV(ev.target.result).slice(0,5)); }
+      catch(e) { setError("Could not parse file. Use CSV format."); }
+    };
+    reader.readAsText(f);
+  };
+
+  const handleImport = async () => {
+    if (!file) return;
+    setLoading(true); setResult(null); setError("");
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const students = parseCSV(ev.target.result);
+        const d = await schoolApi("bulk_create_students", {teacher_id:teacher.id, session_token:teacher.session_token||"", students});
+        if (d.ok) { setResult(d); if(d.success>0) setTimeout(onDone, 2000); }
+        else setError(d.error||"Import failed");
+      } catch(e) { setError("Network error"); }
+      setLoading(false);
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <Card color={C.cyan}>
+      <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.cyan,marginBottom:12}}>📥 BULK IMPORT STUDENTS</div>
+      <div style={{background:`${C.purple}15`,borderRadius:10,padding:"10px 12px",marginBottom:14,fontSize:12,color:C.dim,lineHeight:1.7}}>
+        Upload a <strong style={{color:"white"}}>CSV file</strong> with columns:<br/>
+        <code style={{color:C.cyan,fontSize:11}}>name, roll_no, class, section, pin</code><br/>
+        <span style={{fontSize:11}}>Example: <code style={{color:C.yellow}}>Arjun Sharma, 01, 1, A, 1234</code></span>
+      </div>
+      <input type="file" accept=".csv,.txt" onChange={handleFile}
+        style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:13,marginBottom:12,display:"block",cursor:"pointer"}}/>
+      {preview.length>0 && (
+        <div style={{marginBottom:12}}>
+          <div style={{color:C.dim,fontSize:11,marginBottom:6}}>PREVIEW (first {preview.length} rows):</div>
+          {preview.map((s,i)=>(
+            <div key={i} style={{fontSize:12,color:"white",padding:"4px 0",borderBottom:`1px solid ${C.dim}22`}}>
+              {s.roll_no} · {s.name} · Class {s.class_num}-{s.section} · PIN:{s.pin}
+            </div>
+          ))}
+        </div>
+      )}
+      {error  && <div style={{color:C.red,  fontSize:12,marginBottom:10}}>⚠️ {error}</div>}
+      {result && <div style={{color:C.green,fontSize:12,marginBottom:10}}>✅ {result.success} imported{result.failed?.length>0?`, ${result.failed.length} failed`:""}</div>}
+      {file && !result && <Btn color={C.cyan} loading={loading} onClick={handleImport}>📥 IMPORT {file.name}</Btn>}
+      <a href="data:text/csv;charset=utf-8,name%2Croll_no%2Cclass%2Csection%2Cpin%0AArjun%20Sharma%2C01%2C1%2CA%2C1234%0APriya%20Patel%2C02%2C1%2CA%2C5678"
+        download="students_template.csv"
+        style={{display:"block",textAlign:"center",color:C.dim,fontSize:11,marginTop:10,textDecoration:"none"}}>
+        ⬇️ Download CSV template
+      </a>
+    </Card>
   );
 }
 
