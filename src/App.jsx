@@ -2850,7 +2850,17 @@ function Login({ onBack, onDone }) {
           style={{ marginTop:14, width:"100%", background:`${C.purple}14`, border:`1px dashed ${C.purple}44`, borderRadius:10, padding:"9px", color:C.purple, fontSize:11, cursor:"pointer", fontFamily:"'Orbitron',sans-serif", letterSpacing:1 }}>
           🛸 ADMIN LOGIN (DEV MODE)
         </button>
-        <div style={{ display:"none" }}></div>
+        <div style={{ marginTop:16, display:"flex", flexDirection:"column", gap:8 }}>
+          <button onClick={()=>{window._setScreen&&window._setScreen("student_login");}} style={{width:"100%",background:`${C.cyan}15`,border:`1px solid ${C.cyan}33`,borderRadius:14,padding:"12px",cursor:"pointer",color:C.cyan,fontFamily:"'Nunito',sans-serif",fontWeight:800,fontSize:13}}>
+            🏫 School Student Login
+          </button>
+          <button onClick={()=>{window._setScreen&&window._setScreen("teacher_login");}} style={{width:"100%",background:`${C.yellow}15`,border:`1px solid ${C.yellow}33`,borderRadius:14,padding:"12px",cursor:"pointer",color:C.yellow,fontFamily:"'Nunito',sans-serif",fontWeight:800,fontSize:13}}>
+            👨‍🏫 Teacher Login
+          </button>
+          <button onClick={()=>{window._setScreen&&window._setScreen("admin_panel");}} style={{width:"100%",background:`${C.red}15`,border:`1px dashed ${C.red}33`,borderRadius:14,padding:"10px",cursor:"pointer",color:C.red,fontFamily:"'Orbitron',sans-serif",fontSize:10}}>
+            🔐 ADMIN PANEL
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -5417,6 +5427,396 @@ function Settings({ child, user, onBack, onThemeChange, onLogout }) {
   );
 }
 
+
+// ── School API helper ─────────────────────────────────────────────
+const schoolApi = async (action, body={}, adminKey=null) => {
+  const headers = {"Content-Type":"application/json"};
+  if (adminKey) headers["Authorization"] = `Bearer ${adminKey}`;
+  const r = await fetch("/api/school", {method:"POST", headers, body:JSON.stringify({action,...body})});
+  return r.json();
+};
+
+// ── StudentLogin Screen ───────────────────────────────────────────
+function StudentLogin({ onBack, onDone }) {
+  const [step,      setStep]      = useState("school"); // school|student
+  const [schoolCode,setSchoolCode]= useState("");
+  const [rollNo,    setRollNo]    = useState("");
+  const [pin,       setPin]       = useState("");
+  const [classNum,  setClassNum]  = useState("");
+  const [section,   setSection]   = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState("");
+
+  const handleSchool = () => {
+    if (!schoolCode.trim()) { setError("Enter school code"); return; }
+    setError(""); setStep("student");
+  };
+
+  const handleLogin = async () => {
+    if (!rollNo.trim()||pin.length<4) { setError("Enter roll number and 4-digit PIN"); return; }
+    setLoading(true); setError("");
+    try {
+      const d = await schoolApi("student_login", {school_code:schoolCode.trim().toUpperCase(), roll_no:rollNo.trim(), pin, class_num:classNum?parseInt(classNum):undefined, section:section||undefined});
+      if (d.student) { SFX.select(); onDone(d.student); }
+      else setError(d.error||"Invalid credentials");
+    } catch(e) { setError("Network error"); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"24px 18px",position:"relative"}}>
+      <Starfield n={30}/>
+      <div style={{position:"relative",zIndex:2,maxWidth:420,margin:"0 auto"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:32}}>
+          <BackBtn onClick={onBack} color={C.cyan}/>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>STUDENT LOGIN</div>
+        </div>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:52,marginBottom:8}}>🏫</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:16,color:C.yellow}}>MATHMAGIC</div>
+          <div style={{color:C.dim,fontSize:12,marginTop:4}}>School Edition</div>
+        </div>
+
+        {step==="school" ? (
+          <Card color={C.cyan} style={{marginBottom:16}}>
+            <div style={{color:C.dim,fontSize:12,marginBottom:8,fontFamily:"'Orbitron',sans-serif"}}>SCHOOL CODE</div>
+            <input value={schoolCode} onChange={e=>setSchoolCode(e.target.value.toUpperCase())}
+              placeholder="e.g. MATH001" maxLength={20}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"12px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:16,letterSpacing:3,textAlign:"center",marginBottom:12,display:"block"}}/>
+            {error&&<div style={{color:C.red,fontSize:12,marginBottom:10}}>{error}</div>}
+            <Btn color={C.cyan} onClick={handleSchool}>NEXT →</Btn>
+          </Card>
+        ) : (
+          <Card color={C.purple} style={{marginBottom:16}}>
+            <div style={{color:C.cyan,fontSize:11,fontFamily:"'Orbitron',sans-serif",marginBottom:12}}>🏫 {schoolCode}</div>
+            <div style={{color:C.dim,fontSize:12,marginBottom:6,fontFamily:"'Orbitron',sans-serif"}}>ROLL NUMBER</div>
+            <input value={rollNo} onChange={e=>setRollNo(e.target.value)} placeholder="e.g. 01"
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.purple}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:15,marginBottom:10,display:"block"}}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+              <div>
+                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>CLASS</div>
+                <select value={classNum} onChange={e=>setClassNum(e.target.value)}
+                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.purple}44`,borderRadius:10,padding:"10px",color:classNum?"white":C.dim,fontFamily:"'Nunito',sans-serif",fontSize:14}}>
+                  <option value="">Any</option>
+                  {[1,2,3,4,5].map(n=><option key={n} value={n}>Class {n}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>SECTION</div>
+                <input value={section} onChange={e=>setSection(e.target.value.toUpperCase())} placeholder="A"
+                  maxLength={3} style={{width:"100%",background:C.card2,border:`1.5px solid ${C.purple}44`,borderRadius:10,padding:"10px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+              </div>
+            </div>
+            <div style={{color:C.dim,fontSize:12,marginBottom:6,fontFamily:"'Orbitron',sans-serif"}}>4-DIGIT PIN</div>
+            <input value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,"").slice(0,4))}
+              type="password" placeholder="••••" maxLength={4}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.purple}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:20,letterSpacing:6,textAlign:"center",marginBottom:12,display:"block"}}/>
+            {error&&<div style={{color:C.red,fontSize:12,marginBottom:10}}>{error}</div>}
+            <Btn color={C.purple} loading={loading} onClick={handleLogin}>🚀 ENTER ACADEMY</Btn>
+            <button onClick={()=>{setStep("school");setError("");}} style={{background:"none",border:"none",color:C.dim,fontSize:12,cursor:"pointer",marginTop:8,width:"100%",fontFamily:"'Nunito',sans-serif"}}>← Change school code</button>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── TeacherLogin Screen ───────────────────────────────────────────
+function TeacherLogin({ onBack, onDone }) {
+  const [email,   setEmail]   = useState("");
+  const [pin,     setPin]     = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState("");
+
+  const handleLogin = async () => {
+    if (!email.trim()||pin.length<4) { setError("Enter email and PIN"); return; }
+    setLoading(true); setError("");
+    try {
+      const d = await schoolApi("teacher_login", {email:email.trim().toLowerCase(), pin});
+      if (d.teacher) { SFX.select(); onDone(d.teacher); }
+      else setError(d.error||"Invalid credentials");
+    } catch(e) { setError("Network error"); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"24px 18px",position:"relative"}}>
+      <Starfield n={20}/>
+      <div style={{position:"relative",zIndex:2,maxWidth:420,margin:"0 auto"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:32}}>
+          <BackBtn onClick={onBack} color={C.yellow}/>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.yellow}}>TEACHER LOGIN</div>
+        </div>
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:52,marginBottom:8}}>👨‍🏫</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:15,color:C.yellow}}>TEACHER PORTAL</div>
+        </div>
+        <Card color={C.yellow}>
+          <div style={{color:C.dim,fontSize:12,marginBottom:6,fontFamily:"'Orbitron',sans-serif"}}>EMAIL</div>
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="teacher@school.com" type="email"
+            style={{width:"100%",background:C.card2,border:`1.5px solid ${C.yellow}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:12,display:"block"}}/>
+          <div style={{color:C.dim,fontSize:12,marginBottom:6,fontFamily:"'Orbitron',sans-serif"}}>PIN</div>
+          <input value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,"").slice(0,6))}
+            type="password" placeholder="••••••" maxLength={6}
+            style={{width:"100%",background:C.card2,border:`1.5px solid ${C.yellow}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:20,letterSpacing:6,textAlign:"center",marginBottom:12,display:"block"}}/>
+          {error&&<div style={{color:C.red,fontSize:12,marginBottom:10}}>{error}</div>}
+          <Btn color={C.yellow} loading={loading} onClick={handleLogin}>👨‍🏫 LOGIN</Btn>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ── TeacherDashboard Screen ───────────────────────────────────────
+function TeacherDashboard({ teacher, onLogout }) {
+  const [students,  setStudents]  = useState([]);
+  const [view,      setView]      = useState("list"); // list|add
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState("");
+  const [form,      setForm]      = useState({name:"",roll_no:"",pin:"",class_num:teacher.class_num,section:teacher.section});
+  const [saving,    setSaving]    = useState(false);
+  const [saveMsg,   setSaveMsg]   = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const d = await schoolApi("get_class_dashboard",{teacher_id:teacher.id,teacher_pin:localStorage.getItem("t_pin")||""});
+      if (d.data) setStudents(d.data); else setError(d.error||"Failed to load");
+    } catch(e) { setError("Network error"); }
+    setLoading(false);
+  };
+
+  useEffect(()=>{ load(); },[]);
+
+  const handleAdd = async () => {
+    if (!form.name.trim()||!form.roll_no.trim()||form.pin.length<4) { setSaveMsg("Fill all fields + 4-digit PIN"); return; }
+    setSaving(true); setSaveMsg("");
+    try {
+      const d = await schoolApi("create_student",{...form,teacher_id:teacher.id,teacher_pin:localStorage.getItem("t_pin")||""});
+      if (d.data) { setSaveMsg("✅ Student added!"); setForm({...form,name:"",roll_no:"",pin:""}); load(); }
+      else setSaveMsg(d.error||"Failed");
+    } catch(e) { setSaveMsg("Network error"); }
+    setSaving(false);
+  };
+
+  const avg = students.length ? Math.round(students.reduce((s,st)=>s+(st.xp||0),0)/students.length) : 0;
+  const top = students[0];
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",overflowY:"auto"}}>
+      {/* Header */}
+      <div style={{background:C.card,borderBottom:`1px solid ${C.purple}33`,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
+        <div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.yellow}}>👨‍🏫 {teacher.name}</div>
+          <div style={{fontSize:11,color:C.dim}}>Class {teacher.class_num}-{teacher.section}</div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setView(view==="add"?"list":"add")} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:10,padding:"8px 14px",color:C.cyan,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:10}}>
+            {view==="add"?"📋 LIST":"➕ ADD"}
+          </button>
+          <button onClick={onLogout} style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:10,padding:"8px 12px",color:C.red,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif",fontWeight:700}}>LOGOUT</button>
+        </div>
+      </div>
+
+      <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
+        {/* Stats */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
+          {[["👥","Students",students.length],[" ⭐","Avg XP",avg],["🏆","Top",top?.name?.split(" ")[0]||"—"]].map(([e,l,v],i)=>(
+            <Card key={i} color={C.purple} style={{textAlign:"center",padding:"12px 8px"}}>
+              <div style={{fontSize:18}}>{e}</div>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:16,color:"white",margin:"4px 0"}}>{v}</div>
+              <div style={{color:C.dim,fontSize:10}}>{l}</div>
+            </Card>
+          ))}
+        </div>
+
+        {view==="add" ? (
+          <Card color={C.cyan}>
+            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.cyan,marginBottom:14}}>➕ ADD NEW STUDENT</div>
+            {[["Name","name","text","Full name"],["Roll No","roll_no","text","01"],["PIN (4 digits)","pin","password","••••"]].map(([l,k,t,ph])=>(
+              <div key={k} style={{marginBottom:10}}>
+                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+                <input value={form[k]} onChange={e=>setForm({...form,[k]:k==="pin"?e.target.value.replace(/\D/g,"").slice(0,4):e.target.value})}
+                  type={t} placeholder={ph}
+                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+              </div>
+            ))}
+            {saveMsg&&<div style={{color:saveMsg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:8}}>{saveMsg}</div>}
+            <Btn color={C.cyan} loading={saving} onClick={handleAdd}>ADD STUDENT</Btn>
+          </Card>
+        ) : (
+          <div>
+            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.dim,marginBottom:10}}>STUDENTS — {students.length} total</div>
+            {loading && <div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
+            {error   && <div style={{color:C.red,fontSize:13,marginBottom:10}}>{error}</div>}
+            {students.map((s,i)=>(
+              <div key={s.id} style={{background:C.card,border:`1px solid ${C.purple}22`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
+                <div style={{background:`${C.purple}33`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.purple,flexShrink:0}}>
+                  {String(s.roll_no).padStart(2,"0")}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:800,fontSize:14,color:"white"}}>{s.name}</div>
+                  <div style={{fontSize:11,color:C.dim}}>Lv {s.level||1} · {s.xp||0} XP · {s.coins||0} coins</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:10,color:C.dim}}>{s.last_active ? new Date(s.last_active).toLocaleDateString("en-IN") : "Never"}</div>
+                  <div style={{fontSize:10,color:s.streak_days>0?C.orange:C.dim}}>🔥 {s.streak_days||0} days</div>
+                </div>
+              </div>
+            ))}
+            {!loading&&students.length===0&&<div style={{textAlign:"center",color:C.dim,padding:30}}>No students yet. Add your first student!</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── AdminPanel Screen ─────────────────────────────────────────────
+function AdminPanel({ onBack }) {
+  const [adminKey,  setAdminKey]  = useState(localStorage.getItem("mm_admin_key")||"");
+  const [authed,    setAuthed]    = useState(false);
+  const [view,      setView]      = useState("schools"); // schools|teachers
+  const [schools,   setSchools]   = useState([]);
+  const [selSchool, setSelSchool] = useState(null);
+  const [form,      setForm]      = useState({});
+  const [loading,   setLoading]   = useState(false);
+  const [msg,       setMsg]       = useState("");
+
+  const api = (action, body={}) => schoolApi(action, body, adminKey);
+
+  const loadSchools = async () => {
+    setLoading(true);
+    const d = await api("admin_list_schools");
+    if (d.data) setSchools(d.data);
+    setLoading(false);
+  };
+
+  const handleAuth = () => {
+    if (!adminKey.trim()) return;
+    localStorage.setItem("mm_admin_key", adminKey);
+    setAuthed(true); loadSchools();
+  };
+
+  const handleCreateSchool = async () => {
+    setMsg(""); setLoading(true);
+    const d = await api("admin_create_school", form);
+    setMsg(d.data ? "✅ School created!" : d.error||"Failed");
+    if (d.data) { loadSchools(); setForm({}); }
+    setLoading(false);
+  };
+
+  const handleCreateTeacher = async () => {
+    setMsg(""); setLoading(true);
+    const d = await api("admin_create_teacher", {...form, school_id: selSchool?.id});
+    setMsg(d.data ? "✅ Teacher created!" : d.error||"Failed");
+    if (d.data) setForm({});
+    setLoading(false);
+  };
+
+  if (!authed) return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"24px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:32}}>
+        <BackBtn onClick={onBack} color={C.red}/><div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red}}>ADMIN PANEL</div>
+      </div>
+      <Card color={C.red} style={{maxWidth:400,margin:"0 auto"}}>
+        <div style={{fontSize:36,textAlign:"center",marginBottom:12}}>🔐</div>
+        <div style={{color:C.dim,fontSize:12,marginBottom:8}}>ADMIN SECRET KEY</div>
+        <input value={adminKey} onChange={e=>setAdminKey(e.target.value)} type="password" placeholder="Enter admin key"
+          style={{width:"100%",background:C.card2,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:12,display:"block"}}/>
+        <Btn color={C.red} onClick={handleAuth}>🔐 ENTER</Btn>
+      </Card>
+    </div>
+  );
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",overflowY:"auto"}}>
+      <div style={{background:C.card,borderBottom:`1px solid ${C.red}33`,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red}}>🔐 ADMIN PANEL</div>
+        <div style={{display:"flex",gap:8}}>
+          {["schools","teachers"].map(v=>(
+            <button key={v} onClick={()=>{setView(v);setMsg("");}} style={{background:view===v?`${C.red}22`:"none",border:`1px solid ${C.red}${view===v?"66":"22"}`,borderRadius:8,padding:"6px 12px",color:view===v?C.red:C.dim,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:9}}>
+              {v.toUpperCase()}
+            </button>
+          ))}
+          <BackBtn onClick={onBack} color={C.dim}/>
+        </div>
+      </div>
+
+      <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
+        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:13,marginBottom:12,padding:"10px 14px",background:msg.startsWith("✅")?`${C.green}11`:`${C.red}11`,borderRadius:10}}>{msg}</div>}
+
+        {view==="schools" && (
+          <>
+            <Card color={C.yellow} style={{marginBottom:16}}>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.yellow,marginBottom:12}}>➕ CREATE SCHOOL</div>
+              {[["School Name","name","text","St. Xavier's School"],["City","city","text","Mumbai"],["School Code","school_code","text","MATH001"]].map(([l,k,t,ph])=>(
+                <div key={k} style={{marginBottom:10}}>
+                  <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+                  <input value={form[k]||""} onChange={e=>setForm({...form,[k]:k==="school_code"?e.target.value.toUpperCase():e.target.value})}
+                    type={t} placeholder={ph}
+                    style={{width:"100%",background:C.card2,border:`1.5px solid ${C.yellow}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+                </div>
+              ))}
+              <Btn color={C.yellow} loading={loading} onClick={handleCreateSchool}>CREATE SCHOOL</Btn>
+            </Card>
+            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.dim,marginBottom:10}}>ALL SCHOOLS ({schools.length})</div>
+            {schools.map(s=>(
+              <div key={s.id} style={{background:C.card,border:`1px solid ${C.yellow}22`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontWeight:800,color:"white",fontSize:14}}>{s.name}</div>
+                  <div style={{color:C.dim,fontSize:12}}>{s.city}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>{s.school_code}</div>
+                  <div style={{fontSize:10,color:s.is_active?C.green:C.red}}>{s.is_active?"Active":"Inactive"}</div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {view==="teachers" && (
+          <Card color={C.cyan}>
+            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.cyan,marginBottom:12}}>➕ CREATE TEACHER</div>
+            <div style={{color:C.dim,fontSize:11,marginBottom:6}}>SCHOOL</div>
+            <select value={selSchool?.id||""} onChange={e=>setSelSchool(schools.find(s=>s.id===e.target.value)||null)}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:10}}>
+              <option value="">Select school...</option>
+              {schools.map(s=><option key={s.id} value={s.id}>{s.name} ({s.school_code})</option>)}
+            </select>
+            {[["Teacher Name","name","text","Mrs. Sharma"],["Email","email","email","teacher@school.com"],["PIN (4-6 digits)","pin","password","••••••"]].map(([l,k,t,ph])=>(
+              <div key={k} style={{marginBottom:10}}>
+                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+                <input value={form[k]||""} onChange={e=>setForm({...form,[k]:e.target.value})}
+                  type={t} placeholder={ph}
+                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+              </div>
+            ))}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+              <div>
+                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>CLASS</div>
+                <select value={form.class_num||""} onChange={e=>setForm({...form,class_num:parseInt(e.target.value)})}
+                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14}}>
+                  <option value="">Select...</option>
+                  {[1,2,3,4,5].map(n=><option key={n} value={n}>Class {n}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>SECTION</div>
+                <input value={form.section||""} onChange={e=>setForm({...form,section:e.target.value.toUpperCase()})}
+                  placeholder="A" maxLength={3}
+                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+              </div>
+            </div>
+            <Btn color={C.cyan} loading={loading} onClick={handleCreateTeacher}>CREATE TEACHER</Btn>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PrivacyPolicy({ onBack }) {
   return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",overflowY:"auto"}}>
@@ -5508,8 +5908,10 @@ function GamesHub({ child, onBack }) {
 // ROOT APP
 // ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [themeKey,setThemeKey]=useState(localStorage.getItem('mm_theme')||'light');
-  const handleThemeChange=(key)=>{C=THEMES[key]||THEMES.light;setThemeKey(key);};
+  const [themeKey,setThemeKey]=useState(localStorage.getItem('mm_theme')||'royal');
+  const [schoolStudent, setSchoolStudent] = useState(null);
+  const [teacher,       setTeacher]       = useState(null);
+  const handleThemeChange=(key)=>{C=THEMES[key]||THEMES.royal;setThemeKey(key);};
   const [screen,         setScreen]         = useState("splash");
   const [user,           setUser]           = useState(null);
   const [child,          setChild]          = useState(null);
@@ -5517,6 +5919,9 @@ export default function App() {
   const [lesson,         setLesson]         = useState(null);
   const [feedbackPrefill,setFeedbackPrefill]= useState(null);
   const [prevScreen,     setPrevScreen]     = useState("home");
+
+  // Expose setScreen globally so nested Login component can navigate to school screens
+  useEffect(() => { window._setScreen = setScreen; return () => { delete window._setScreen; }; }, [setScreen]);
 
   const goFeedback = (prefillCat = null) => {
     setPrevScreen(screen);
@@ -5580,6 +5985,10 @@ export default function App() {
   if (screen === "parent")   return <><GlobalStyles/><ParentDash child={child} onBack={() => setScreen("home")}/></>;
   if (screen === "feedback") return <><GlobalStyles/><FeedbackScreen child={child} currentScreen={prevScreen} prefillCategory={feedbackPrefill} onBack={() => setScreen(prevScreen)}/></>;
   if (screen === "games")    return <><GlobalStyles/><GamesHub child={child} onBack={() => setScreen("home")}/></>;
+  if (screen === "student_login") return <><GlobalStyles/><StudentLogin onBack={()=>setScreen("welcome")} onDone={(s)=>{setSchoolStudent(s);setScreen("home");}}/></>;
+  if (screen === "teacher_login") return <><GlobalStyles/><TeacherLogin onBack={()=>setScreen("welcome")} onDone={(t)=>{setTeacher(t);localStorage.setItem("t_pin",t._pin||"");setScreen("teacher_dash");}}/></>;
+  if (screen === "teacher_dash")  return <><GlobalStyles/><TeacherDashboard teacher={teacher} onLogout={()=>{setTeacher(null);setScreen("welcome");}}/></>;
+  if (screen === "admin_panel")   return <><GlobalStyles/><AdminPanel onBack={()=>setScreen("welcome")}/></>;
   if (screen === "privacy")    return <><GlobalStyles/><PrivacyPolicy  onBack={()=>setScreen("settings")}/></>;
   if (screen === "terms")      return <><GlobalStyles/><TermsOfService onBack={()=>setScreen("settings")}/></>;
   if (screen === "datapolicy") return <><GlobalStyles/><DataPolicy     onBack={()=>setScreen("settings")}/></>;
