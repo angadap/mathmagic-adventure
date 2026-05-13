@@ -107,8 +107,7 @@ export default async function handler(req, res) {
         const r = await sb("teachers","POST",{
           school_id, name:clean(name,50),
           email:clean(email,100).toLowerCase(),
-          pin_hash, class_num:cleanInt(class_num,1,5),
-          section:clean(section,5).toUpperCase(), is_active:true
+          pin_hash, is_active:true
         });
         if (!r.ok) return res.status(400).json({error:"Email may already exist"});
         return res.status(200).json({data: Array.isArray(r.data)?r.data[0]:r.data});
@@ -137,26 +136,29 @@ export default async function handler(req, res) {
       if (!Array.isArray(r.data)||!r.data[0])
         return res.status(401).json({error:"Invalid email or PIN"});
       const t = r.data[0];
-      // Return teacher info (no JWT needed — teacher session is stateless)
-      return res.status(200).json({teacher:{id:t.id,name:t.name,email:t.email,school_id:t.school_id,class_num:t.class_num,section:t.section}});
+      // Generate session token and store in DB
+      const { randomBytes } = await import("crypto");
+      const session_token = randomBytes(32).toString("hex");
+      await sb("teachers","PATCH",{session_token},`?id=eq.${t.id}`);
+      return res.status(200).json({teacher:{id:t.id,name:t.name,email:t.email,school_id:t.school_id},session_token});
     }
 
     // ══════════════════════════════════════════════════════
     // TEACHER ACTIONS — verified by teacher_id + pin_hash
     // ══════════════════════════════════════════════════════
-    async function verifyTeacher(teacher_id, pin) {
-      if (!isUUID(teacher_id)||!pin) return null;
-      const pin_hash = await hashPin(String(pin).slice(0,6));
+    // Teacher auth: simple session token stored server-side in teachers table
+    async function verifyTeacher(teacher_id, session_token) {
+      if (!isUUID(teacher_id)||!session_token) return null;
       const r = await sb("teachers","GET",null,
-        `?id=eq.${teacher_id}&pin_hash=eq.${pin_hash}&is_active=eq.true&select=id,school_id,class_num,section&limit=1`);
+        `?id=eq.${teacher_id}&session_token=eq.${encodeURIComponent(session_token)}&is_active=eq.true&select=id,school_id,name,email&limit=1`);
       return Array.isArray(r.data)&&r.data[0] ? r.data[0] : null;
     }
 
-    const {teacher_id, teacher_pin} = req.body;
+    const {teacher_id, session_token} = req.body;
 
     // Create student
     if (action==="create_student") {
-      const teacher = await verifyTeacher(teacher_id, teacher_pin);
+      const teacher = await verifyTeacher(teacher_id, session_token);
       if (!teacher) return res.status(401).json({error:"Unauthorized"});
       const {name, roll_no, pin} = req.body;
       const class_num = cleanInt(req.body.class_num, 1, 5);
@@ -175,16 +177,19 @@ export default async function handler(req, res) {
 
     // List students
     if (action==="list_students") {
-      const teacher = await verifyTeacher(teacher_id, teacher_pin);
+      const teacher = await verifyTeacher(teacher_id, session_token);
       if (!teacher) return res.status(401).json({error:"Unauthorized"});
-      const r = await sb("students","GET",null,
-        `?school_id=eq.${teacher.school_id}&class_num=eq.${teacher.class_num}&section=eq.${encodeURIComponent(teacher.section)}&order=roll_no`);
+      const {class_num, section} = req.body;
+      let params = `?school_id=eq.${teacher.school_id}&order=class_num,section,roll_no`;
+      if (class_num) params += `&class_num=eq.${cleanInt(class_num,1,5)}`;
+      if (section)   params += `&section=eq.${encodeURIComponent(clean(section,5).toUpperCase())}`;
+      const r = await sb("students","GET",null,params);
       return res.status(200).json({data:r.data});
     }
 
     // Get student progress
     if (action==="get_student_progress") {
-      const teacher = await verifyTeacher(teacher_id, teacher_pin);
+      const teacher = await verifyTeacher(teacher_id, session_token);
       if (!teacher) return res.status(401).json({error:"Unauthorized"});
       const {student_id} = req.body;
       if (!isUUID(student_id)) return res.status(400).json({error:"Invalid student_id"});
@@ -197,10 +202,13 @@ export default async function handler(req, res) {
 
     // Get class dashboard (all students + their progress summary)
     if (action==="get_class_dashboard") {
-      const teacher = await verifyTeacher(teacher_id, teacher_pin);
+      const teacher = await verifyTeacher(teacher_id, session_token);
       if (!teacher) return res.status(401).json({error:"Unauthorized"});
-      const r = await sb("students","GET",null,
-        `?school_id=eq.${teacher.school_id}&class_num=eq.${teacher.class_num}&section=eq.${encodeURIComponent(teacher.section)}&select=id,name,roll_no,xp,level,coins,streak_days,last_active&order=xp.desc`);
+      const {class_num, section} = req.body;
+      let params = `?school_id=eq.${teacher.school_id}&select=id,name,roll_no,class_num,section,xp,level,coins,streak_days,last_active&order=class_num,section,xp.desc`;
+      if (class_num) params += `&class_num=eq.${cleanInt(class_num,1,5)}`;
+      if (section)   params += `&section=eq.${encodeURIComponent(clean(section,5).toUpperCase())}`;
+      const r = await sb("students","GET",null,params);
       return res.status(200).json({data:r.data});
     }
 
@@ -252,6 +260,28 @@ export default async function handler(req, res) {
       return res.status(200).json({ok:true,xp:nx,coins:nc});
     }
 
+
+    // Bulk create students (from Excel import)
+    if (action==="bulk_create_students") {
+      const teacher = await verifyTeacher(teacher_id, session_token);
+      if (!teacher) return res.status(401).json({error:"Unauthorized"});
+      const {students} = req.body; // array of {name,roll_no,class_num,section,pin}
+      if (!Array.isArray(students)||students.length===0) return res.status(400).json({error:"No students"});
+      if (students.length>200) return res.status(400).json({error:"Max 200 students per import"});
+      const results = {success:0, failed:[], };
+      for (const s of students) {
+        if (!s.name||!s.roll_no||!s.pin) { results.failed.push({roll_no:s.roll_no,reason:"Missing fields"}); continue; }
+        const pin_hash = await hashPin(String(s.pin).slice(0,4));
+        const r = await sb("students","POST",{
+          school_id:teacher.school_id, teacher_id,
+          name:clean(s.name,50), roll_no:clean(String(s.roll_no),10),
+          class_num:cleanInt(s.class_num,1,5), section:clean(String(s.section||"A"),5).toUpperCase(),
+          pin_hash, xp:0, coins:50, level:1, streak_days:0
+        });
+        if (r.ok) results.success++; else results.failed.push({roll_no:s.roll_no,reason:"Duplicate roll number"});
+      }
+      return res.status(200).json({ok:true, ...results});
+    }
     return res.status(400).json({error:"Unknown action"});
 
   } catch(err) {
