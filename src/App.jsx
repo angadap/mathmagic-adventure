@@ -6069,7 +6069,7 @@ export default function App() {
     await db.signOut();
     setUser(null); setChild(null); setWorld(null); setLesson(null);
     db.track("logout", child?.id, user?.id, {});
-    setScreen("welcome");
+    setScreen("entry");
   };
 
   const goWorld = (cw, canAccess) => {
@@ -6088,7 +6088,8 @@ export default function App() {
     setScreen("lessons");
   }, [child]);
 
-  if (screen === "splash")   return <><GlobalStyles/><Splash   onDone={() => setScreen("welcome")}/></>;
+  if (screen === "splash")   return <><GlobalStyles/><Splash   onDone={() => setScreen("entry")}/></>;
+  if (screen === "entry")    return <><GlobalStyles/><EntryScreen onSelect={(s)=>setScreen(s)}/></>;
   if (screen === "welcome")  return <><GlobalStyles/><Welcome  onRegister={() => setScreen("register")} onLogin={() => setScreen("login")} onPrivacy={() => { setPrevScreen("welcome"); setScreen("privacy"); }}/></>;
   if (screen === "register") return <><GlobalStyles/><Register onBack={() => setScreen("welcome")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
   if (screen === "login")    return <><GlobalStyles/><Login    onBack={() => setScreen("welcome")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
@@ -6101,10 +6102,10 @@ export default function App() {
   if (screen === "parent")   return <><GlobalStyles/><ParentDash child={child} onBack={() => setScreen("home")}/></>;
   if (screen === "feedback") return <><GlobalStyles/><FeedbackScreen child={child} currentScreen={prevScreen} prefillCategory={feedbackPrefill} onBack={() => setScreen(prevScreen)}/></>;
   if (screen === "games")    return <><GlobalStyles/><GamesHub child={child} onBack={() => setScreen("home")}/></>;
-  if (screen === "student_login") return <><GlobalStyles/><StudentLogin onBack={()=>setScreen("welcome")} onDone={(s)=>{setSchoolStudent(s);setScreen("home");}}/></>;
-  if (screen === "teacher_login") return <><GlobalStyles/><TeacherLogin onBack={()=>setScreen("welcome")} onDone={(t)=>{setTeacher(t);localStorage.setItem("t_pin",t._pin||"");setScreen("teacher_dash");}}/></>;
-  if (screen === "teacher_dash")  return <><GlobalStyles/><TeacherDashboard teacher={teacher} onLogout={()=>{setTeacher(null);setScreen("welcome");}}/></>;
-  if (screen === "admin_panel")   return <><GlobalStyles/><AdminPanel onBack={()=>setScreen("welcome")}/></>;
+  if (screen === "student_login") return <><GlobalStyles/><StudentLogin onBack={()=>setScreen("entry")} onDone={(s)=>{setSchoolStudent(s);setScreen("home");}}/></>;
+  if (screen === "teacher_login") return <><GlobalStyles/><TeacherLogin onBack={()=>setScreen("entry")} onDone={(t)=>{setTeacher(t);localStorage.setItem("mm_teacher_session",JSON.stringify(t));setScreen("teacher_dash");}}/></>;
+  if (screen === "teacher_dash")  return <><GlobalStyles/><TeacherDashboard teacher={teacher} onLogout={()=>{setTeacher(null);setScreen("entry");}}/></>;
+  if (screen === "admin_panel")   return <><GlobalStyles/><AdminPanel onBack={()=>setScreen("entry")}/></>;
   if (screen === "privacy")    return <><GlobalStyles/><PrivacyPolicy  onBack={()=>setScreen("settings")}/></>;
   if (screen === "terms")      return <><GlobalStyles/><TermsOfService onBack={()=>setScreen("settings")}/></>;
   if (screen === "datapolicy") return <><GlobalStyles/><DataPolicy     onBack={()=>setScreen("settings")}/></>;
