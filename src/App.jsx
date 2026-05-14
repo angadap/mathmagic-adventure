@@ -2846,10 +2846,7 @@ function Login({ onBack, onDone }) {
           }} style={{ background:"none", border:"none", color:C.dim, fontSize:12, cursor:"pointer", fontWeight:600 }}>Forgot password?</button>
         </div>
         {/* Admin quick-fill */}
-        <button onClick={() => { setEmail(ADMIN_EMAIL); setPass(ADMIN_PASSWORD); }}
-          style={{ marginTop:14, width:"100%", background:`${C.purple}14`, border:`1px dashed ${C.purple}44`, borderRadius:10, padding:"9px", color:C.purple, fontSize:11, cursor:"pointer", fontFamily:"'Orbitron',sans-serif", letterSpacing:1 }}>
-          🛸 ADMIN LOGIN (DEV MODE)
-        </button>
+
         <div style={{height:8}}/>
       </div>
     </div>
@@ -3127,24 +3124,20 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
           const dqDone = !!localStorage.getItem(dqKey);
           const dpDone = !!localStorage.getItem(dpKey);
           return (<>
-            <button onClick={()=>setShowDQ(true)} style={{background:`linear-gradient(135deg,${C.yellow}18,${C.orange}0c)`,border:`1.5px solid ${dqDone?C.green+"66":C.yellow+"55"}`,borderRadius:15,padding:"12px 14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",textAlign:"left",width:"100%",animation:dqDone?"none":"pulseG 3s ease-in-out infinite"}}>
-              <div style={{fontSize:28}}>{dqDone?"✅":"🌟"}</div>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:dqDone?C.green:C.yellow,letterSpacing:1}}>DAILY CHALLENGE</div>
-                <div style={{color:"white",fontSize:13,fontWeight:700,marginTop:2}}>{dqDone?"Completed today! 🎉":"1 Word Problem · Tap to solve!"}</div>
-                <div style={{fontSize:10,color:C.dim,marginTop:3}}>Resets at midnight · +50 XP</div>
-              </div>
-              <div style={{color:dqDone?C.green:C.yellow,fontFamily:"'Orbitron',sans-serif",fontSize:11,textAlign:"center"}}><div>{dqDone?"✓":"+50"}</div><div style={{fontSize:8}}>XP</div></div>
-            </button>
-            <button onClick={()=>setShowPuzzle(true)} style={{background:`linear-gradient(135deg,${C.purple}18,${C.cyan}0c)`,border:`1.5px solid ${dpDone?C.green+"66":C.purple+"55"}`,borderRadius:15,padding:"12px 14px",display:"flex",alignItems:"center",gap:12,cursor:"pointer",textAlign:"left",width:"100%",animation:dpDone?"none":"pulseG 3s ease-in-out infinite"}}>
-              <div style={{fontSize:28}}>{dpDone?"🏆":"🧩"}</div>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:dpDone?C.green:C.purple,letterSpacing:1}}>DAILY PUZZLE</div>
-                <div style={{color:"white",fontSize:13,fontWeight:700,marginTop:2}}>{dpDone?"Solved today! 🎉":"Brain teaser · New puzzle daily!"}</div>
-                <div style={{fontSize:10,color:C.dim,marginTop:3}}>Resets midnight · +75 XP</div>
-              </div>
-              <div style={{color:dpDone?C.green:C.purple,fontFamily:"'Orbitron',sans-serif",fontSize:11,textAlign:"center"}}><div>{dpDone?"✓":"+75"}</div><div style={{fontSize:8}}>XP</div></div>
-            </button>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <button onClick={()=>setShowDQ(true)} style={{background:`linear-gradient(135deg,${C.yellow}22,${C.orange}0c)`,border:`1.5px solid ${dqDone?C.green+"66":C.yellow+"55"}`,borderRadius:15,padding:"12px 10px",cursor:"pointer",textAlign:"center",animation:dqDone?"none":"pulseG 3s ease-in-out infinite"}}>
+                <div style={{fontSize:26,marginBottom:4}}>{dqDone?"✅":"🌟"}</div>
+                <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:9,color:dqDone?C.green:C.yellow,letterSpacing:1}}>WORD PROBLEM</div>
+                <div style={{color:"white",fontSize:11,fontWeight:700,marginTop:3}}>{dqDone?"Done! 🎉":"Solve today"}</div>
+                <div style={{color:dqDone?C.green:C.yellow,fontSize:10,marginTop:4,fontWeight:800}}>+50 XP</div>
+              </button>
+              <button onClick={()=>setShowPuzzle(true)} style={{background:`linear-gradient(135deg,${C.purple}22,${C.cyan}0c)`,border:`1.5px solid ${dpDone?C.green+"66":C.purple+"55"}`,borderRadius:15,padding:"12px 10px",cursor:"pointer",textAlign:"center",animation:dpDone?"none":"pulseG 3s ease-in-out infinite"}}>
+                <div style={{fontSize:26,marginBottom:4}}>{dpDone?"🏆":"🧩"}</div>
+                <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:9,color:dpDone?C.green:C.purple,letterSpacing:1}}>BRAIN PUZZLE</div>
+                <div style={{color:"white",fontSize:11,fontWeight:700,marginTop:3}}>{dpDone?"Solved! 🎉":"New puzzle"}</div>
+                <div style={{color:dpDone?C.green:C.purple,fontSize:10,marginTop:4,fontWeight:800}}>+75 XP</div>
+              </button>
+            </div>
           </>);
         })()}
       </div>
@@ -3568,15 +3561,7 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
         </div>
       </div>
       <div style={{ position:"relative", zIndex:2, padding:"14px 18px" }}>
-        {burst && (
-          <div style={{position:"fixed",top:"28%",left:"50%",transform:"translateX(-50%)",zIndex:999,pointerEvents:"none",textAlign:"center",animation:"popIn 0.35s ease"}}>
-            <div style={{background:`linear-gradient(135deg,${C.green},#16a34a)`,borderRadius:20,padding:"14px 32px",boxShadow:`0 0 40px ${C.green}88`}}>
-              <div style={{fontSize:30,marginBottom:2}}>🎉</div>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22, color:"white",letterSpacing:2}}>CORRECT!</div>
-              <div style={{fontSize:12,color:"#bbf7d0",marginTop:2}}>+20 XP</div>
-            </div>
-          </div>
-        )}
+        {/* correct feedback: card scales up */}
         <Card color={world.color} style={{ textAlign:"center", padding:"18px 14px", marginBottom:12, transform: burst?"scale(1.02)":"scale(1)", transition:"transform 0.2s" }}>
           <div style={{ fontSize:34, marginBottom:8 }}>{lesson.emoji}</div>
           <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:16, color:"white", lineHeight:1.4 }}>{q.q}</div>
@@ -5423,9 +5408,9 @@ function Settings({ child, user, onBack, onThemeChange, onLogout }) {
 function EntryScreen({ onSelect }) {
   useEffect(()=>{ SFX.screenIn(); },[]);
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 18px",position:"relative"}}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0",position:"relative"}}>
       <Starfield n={30}/>
-      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:420}}>
+      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:420,padding:"24px 18px",margin:"0 auto"}}>
         <div style={{textAlign:"center",marginBottom:36}}>
           <div style={{fontSize:56,marginBottom:8,animation:"floatUp 2s ease-in-out infinite"}}>🚀</div>
           <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:22,color:C.yellow,letterSpacing:2}}>MATHMAGIC</div>
@@ -5455,9 +5440,9 @@ function EntryScreen({ onSelect }) {
 // ── StudentEntry — school vs individual ───────────────────────────
 function StudentEntry({ onBack, onSelect }) {
   return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 18px",position:"relative"}}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0",position:"relative"}}>
       <Starfield n={20}/>
-      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:420}}>
+      <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:420,padding:"24px 18px",margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:28}}>
           <BackBtn onClick={onBack} color={C.cyan}/>
           <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>STUDENT ACCESS</div>
@@ -5638,24 +5623,41 @@ function TeacherLogin({ onBack, onDone }) {
 
 // ── TeacherDashboard Screen ───────────────────────────────────────
 function TeacherDashboard({ teacher, onLogout }) {
-  const [students,  setStudents]  = useState([]);
-  const [view,      setView]      = useState("list"); // list|add
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState("");
-  const [form,      setForm]      = useState({name:"",roll_no:"",pin:"",class_num:teacher.class_num,section:teacher.section});
-  const [saving,    setSaving]    = useState(false);
-  const [saveMsg,   setSaveMsg]   = useState("");
+  const [students,   setStudents]   = useState([]);
+  const [view,       setView]       = useState("classes"); // classes|list|add|import
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState("");
+  const [selClass,   setSelClass]   = useState(null); // {class_num, section}
+  const [form,       setForm]       = useState({name:"",roll_no:"",pin:"",class_num:1,section:"A"});
+  const [saving,     setSaving]     = useState(false);
+  const [saveMsg,    setSaveMsg]    = useState("");
+  const [classMap,   setClassMap]   = useState({}); // {"1-A": count}
 
-  const load = async () => {
+  // Load all students once to build class/section list
+  const loadAll = async () => {
     setLoading(true);
     try {
       const d = await schoolApi("get_class_dashboard",{teacher_id:teacher.id,session_token:teacher.session_token||""});
-      if (d.data) setStudents(d.data); else setError(d.error||"Failed to load");
+      if (d.data) {
+        const map = {};
+        d.data.forEach(s=>{ const k=`${s.class_num}-${s.section}`; map[k]=(map[k]||0)+1; });
+        setClassMap(map);
+      } else setError(d.error||"Failed to load");
     } catch(e) { setError("Network error"); }
     setLoading(false);
   };
 
-  useEffect(()=>{ load(); },[]);
+  const loadClass = async (cls) => {
+    setLoading(true); setSelClass(cls); setStudents([]);
+    try {
+      const d = await schoolApi("get_class_dashboard",{teacher_id:teacher.id,session_token:teacher.session_token||"",class_num:cls.class_num,section:cls.section});
+      if (d.data) setStudents(d.data); else setError(d.error||"Failed");
+    } catch(e) { setError("Network error"); }
+    setView("list"); setLoading(false);
+  };
+
+  const load = () => selClass ? loadClass(selClass) : loadAll();
+  useEffect(()=>{ loadAll(); },[]);
 
   const handleAdd = async () => {
     if (!form.name.trim()||!form.roll_no.trim()||form.pin.length<4) { setSaveMsg("Fill all fields + 4-digit PIN"); return; }
@@ -5677,7 +5679,7 @@ function TeacherDashboard({ teacher, onLogout }) {
       <div style={{background:C.card,borderBottom:`1px solid ${C.purple}33`,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
         <div>
           <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.yellow}}>👨‍🏫 {teacher.name}</div>
-          <div style={{fontSize:11,color:C.dim}}>Class {teacher.class_num}-{teacher.section}</div>
+          <div style={{fontSize:11,color:C.dim}}>{selClass?`Class ${selClass.class_num}-${selClass.section}`:"All Classes"}</div>
         </div>
         <div style={{display:"flex",gap:8}}>
           <button onClick={()=>setView(view==="add"?"list":"add")} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:10,padding:"8px 14px",color:C.cyan,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:10}}>
@@ -5699,6 +5701,31 @@ function TeacherDashboard({ teacher, onLogout }) {
           ))}
         </div>
 
+        {view==="classes" && (
+          <div>
+            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.dim,marginBottom:12}}>SELECT CLASS & SECTION</div>
+            {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
+            {Object.keys(classMap).length===0&&!loading&&(
+              <div style={{textAlign:"center",padding:30}}>
+                <div style={{color:C.dim,fontSize:13,marginBottom:16}}>No students yet.</div>
+                <Btn color={C.cyan} onClick={()=>setView("add")}>➕ Add First Student</Btn>
+              </div>
+            )}
+            {Object.keys(classMap).sort().map(k=>{
+              const [cn,sec]=k.split("-");
+              return (
+                <button key={k} onClick={()=>loadClass({class_num:parseInt(cn),section:sec})} style={{width:"100%",background:C.card,border:`1px solid ${C.cyan}33`,borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,textAlign:"left"}}>
+                  <div>
+                    <div style={{fontWeight:800,color:"white",fontSize:15}}>Class {cn} — Section {sec}</div>
+                    <div style={{color:C.dim,fontSize:12,marginTop:2}}>{classMap[k]} students</div>
+                  </div>
+                  <span style={{color:C.cyan,fontSize:22}}>›</span>
+                </button>
+              );
+            })}
+            <button onClick={()=>setView("add")} style={{width:"100%",background:`${C.green}15`,border:`1.5px dashed ${C.green}44`,borderRadius:14,padding:"14px",cursor:"pointer",color:C.green,fontFamily:"'Nunito',sans-serif",fontWeight:800,fontSize:13,marginTop:4}}>➕ Add New Student</button>
+          </div>
+        )}
         {view==="add" ? (
           <Card color={C.cyan}>
             <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.cyan,marginBottom:14}}>➕ ADD NEW STUDENT</div>
@@ -5740,7 +5767,124 @@ function TeacherDashboard({ teacher, onLogout }) {
         {view==="import" && (
           <ExcelImport teacher={teacher} onDone={()=>{setView("list");load();}}/>
         )}
+        {view==="lessons" && (
+          <TeacherLessons teacher={teacher} classFilter={selClass}/>
+        )}
       </div>
+    </div>
+  );
+}
+
+
+// ── TeacherLessons Component ──────────────────────────────────────
+function TeacherLessons({ teacher, classFilter }) {
+  const [lessons,  setLessons]  = useState([]);
+  const [selLesson,setSelLesson]= useState(null);
+  const [view,     setView]     = useState("list"); // list|add_lesson|add_q
+  const [form,     setForm]     = useState({});
+  const [qForm,    setQForm]    = useState({set_index:0,question_index:0,correct_answer:0});
+  const [loading,  setLoading]  = useState(false);
+  const [msg,      setMsg]      = useState("");
+
+  const api = (action,body={}) => schoolApi(action,{...body,teacher_id:teacher.id,session_token:teacher.session_token||""});
+
+  const load = async () => {
+    setLoading(true);
+    const d = await api("list_custom_lessons",{class_num:classFilter?.class_num});
+    if(d.data) setLessons(d.data);
+    setLoading(false);
+  };
+  useEffect(()=>{ load(); },[]);
+
+  const iStyle = (c) => ({width:"100%",background:C.card2,border:`1.5px solid ${c}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block",marginBottom:10});
+
+  const handleAddLesson = async () => {
+    setLoading(true); setMsg("");
+    const d = await api("create_lesson",{...form,class_num:classFilter?.class_num||parseInt(form.class_num)||1});
+    if(d.data){setMsg("✅ Lesson created!");load();setView("list");}else setMsg(d.error||"Failed");
+    setLoading(false);
+  };
+
+  const handleAddQ = async () => {
+    if(!qForm.question||!selLesson){setMsg("Fill all fields");return;}
+    const opts = [qForm.o0,qForm.o1,qForm.o2,qForm.o3];
+    if(opts.some(o=>!o)){setMsg("All 4 options required");return;}
+    setLoading(true); setMsg("");
+    const d = await api("create_question",{lesson_id:selLesson.lesson_id,...qForm,options:opts});
+    if(d.data){setMsg("✅ Question added!");setQForm({...qForm,question_index:(qForm.question_index||0)+1,question:"",o0:"",o1:"",o2:"",o3:""});}
+    else setMsg(d.error||"Failed");
+    setLoading(false);
+  };
+
+  if(view==="add_lesson") return (
+    <Card color={C.green}>
+      <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.green,marginBottom:12}}>➕ CREATE LESSON</div>
+      <div style={{color:C.dim,fontSize:11,marginBottom:4}}>TITLE</div>
+      <input value={form.title||""} onChange={e=>setForm({...form,title:e.target.value})} placeholder="e.g. Fractions Basics" style={iStyle(C.green)}/>
+      <div style={{color:C.dim,fontSize:11,marginBottom:4}}>EMOJI</div>
+      <input value={form.emoji||""} onChange={e=>setForm({...form,emoji:e.target.value})} placeholder="📚" maxLength={4} style={iStyle(C.green)}/>
+      {!classFilter&&<><div style={{color:C.dim,fontSize:11,marginBottom:4}}>CLASS</div>
+      <select value={form.class_num||1} onChange={e=>setForm({...form,class_num:e.target.value})} style={{...iStyle(C.green),cursor:"pointer"}}>
+        {[1,2,3,4,5].map(n=><option key={n} value={n}>Class {n}</option>)}
+      </select></>}
+      {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:8}}>{msg}</div>}
+      <div style={{display:"flex",gap:8}}>
+        <Btn color={C.green} loading={loading} onClick={handleAddLesson}>CREATE</Btn>
+        <button onClick={()=>setView("list")} style={{flex:1,background:"none",border:`1px solid ${C.dim}44`,borderRadius:12,padding:"12px",color:C.dim,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:13}}>CANCEL</button>
+      </div>
+    </Card>
+  );
+
+  if(view==="add_q"&&selLesson) return (
+    <Card color={C.cyan}>
+      <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.cyan,marginBottom:4}}>➕ ADD QUESTION</div>
+      <div style={{color:C.dim,fontSize:11,marginBottom:12}}>{selLesson.emoji} {selLesson.title}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+        <div><div style={{color:C.dim,fontSize:11,marginBottom:4}}>SET (0-19)</div>
+          <input type="number" value={qForm.set_index} onChange={e=>setQForm({...qForm,set_index:parseInt(e.target.value)||0})} style={iStyle(C.cyan)}/></div>
+        <div><div style={{color:C.dim,fontSize:11,marginBottom:4}}>Q# (0-19)</div>
+          <input type="number" value={qForm.question_index} onChange={e=>setQForm({...qForm,question_index:parseInt(e.target.value)||0})} style={iStyle(C.cyan)}/></div>
+      </div>
+      <div style={{color:C.dim,fontSize:11,marginBottom:4}}>QUESTION</div>
+      <input value={qForm.question||""} onChange={e=>setQForm({...qForm,question:e.target.value})} placeholder="What is 5 + 3?" style={iStyle(C.cyan)}/>
+      {[0,1,2,3].map(i=>(
+        <div key={i}>
+          <div style={{color:i===qForm.correct_answer?C.green:C.dim,fontSize:11,marginBottom:4}}>
+            Option {i+1} {i===qForm.correct_answer?"✓ CORRECT":""}</div>
+          <input value={qForm[`o${i}`]||""} onChange={e=>setQForm({...qForm,[`o${i}`]:e.target.value})} placeholder={`Option ${i+1}`} style={iStyle(i===qForm.correct_answer?C.green:C.cyan)}/>
+        </div>
+      ))}
+      <div style={{color:C.dim,fontSize:11,marginBottom:4}}>CORRECT ANSWER</div>
+      <select value={qForm.correct_answer} onChange={e=>setQForm({...qForm,correct_answer:parseInt(e.target.value)})} style={{...iStyle(C.green),cursor:"pointer"}}>
+        {[0,1,2,3].map(i=><option key={i} value={i}>Option {i+1}</option>)}
+      </select>
+      <div style={{color:C.dim,fontSize:11,marginBottom:4}}>HINT (optional)</div>
+      <input value={qForm.hint||""} onChange={e=>setQForm({...qForm,hint:e.target.value})} placeholder="Hint for students" style={iStyle(C.dim)}/>
+      {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:8}}>{msg}</div>}
+      <div style={{display:"flex",gap:8}}>
+        <Btn color={C.cyan} loading={loading} onClick={handleAddQ}>ADD QUESTION</Btn>
+        <button onClick={()=>setView("list")} style={{background:"none",border:`1px solid ${C.dim}44`,borderRadius:12,padding:"12px",color:C.dim,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700,fontSize:13}}>DONE</button>
+      </div>
+    </Card>
+  );
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.dim}}>CUSTOM LESSONS ({lessons.length})</div>
+        <button onClick={()=>setView("add_lesson")} style={{background:`${C.green}22`,border:`1px solid ${C.green}44`,borderRadius:10,padding:"7px 12px",color:C.green,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:9}}>+ LESSON</button>
+      </div>
+      {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
+      {lessons.map(l=>(
+        <div key={l.id} style={{background:C.card,border:`1px solid ${C.green}33`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontWeight:800,color:"white",fontSize:14}}>{l.emoji} {l.title}</div>
+            <div style={{color:C.dim,fontSize:11}}>Class {l.class_num}</div>
+          </div>
+          <button onClick={()=>{setSelLesson(l);setView("add_q");}} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:10,padding:"7px 12px",color:C.cyan,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:9}}>+ QUESTION</button>
+        </div>
+      ))}
+      {!loading&&lessons.length===0&&<div style={{textAlign:"center",color:C.dim,padding:20}}>No custom lessons yet.</div>}
     </div>
   );
 }
@@ -5832,147 +5976,213 @@ function ExcelImport({ teacher, onDone }) {
 
 // ── AdminPanel Screen ─────────────────────────────────────────────
 function AdminPanel({ onBack }) {
-  const [adminKey,  setAdminKey]  = useState(localStorage.getItem("mm_admin_key")||"");
-  const [authed,    setAuthed]    = useState(false);
-  const [view,      setView]      = useState("schools"); // schools|teachers
+  const [key,       setKey]       = useState(localStorage.getItem("mm_admin_key")||"");
+  const [authed,    setAuthed]    = useState(!!localStorage.getItem("mm_admin_key"));
+  const [view,      setView]      = useState("schools"); // schools|school_detail|add_school|add_teacher
   const [schools,   setSchools]   = useState([]);
   const [selSchool, setSelSchool] = useState(null);
+  const [teachers,  setTeachers]  = useState([]);
+  const [selTeacher,setSelTeacher]= useState(null);
+  const [students,  setStudents]  = useState([]);
   const [form,      setForm]      = useState({});
   const [loading,   setLoading]   = useState(false);
   const [msg,       setMsg]       = useState("");
 
-  const api = (action, body={}) => schoolApi(action, body, adminKey);
+  const api = (action, body={}) => schoolApi(action, body, key);
 
   const loadSchools = async () => {
     setLoading(true);
     const d = await api("admin_list_schools");
-    if (d.data) setSchools(d.data);
+    if (d.data) setSchools(d.data); else setMsg(d.error||"Failed");
     setLoading(false);
   };
 
+  const loadTeachers = async (school) => {
+    setLoading(true); setSelSchool(school); setTeachers([]); setStudents([]);
+    const d = await api("admin_list_teachers", {school_id: school.id});
+    if (d.data) setTeachers(d.data); else setMsg(d.error||"Failed");
+    setView("school_detail"); setLoading(false);
+  };
+
+  const loadStudents = async (teacher) => {
+    setLoading(true); setSelTeacher(teacher); setStudents([]);
+    const d = await api("admin_list_students", {school_id: selSchool.id, teacher_id: teacher.id});
+    if (d.data) setStudents(d.data);
+    setView("teacher_detail"); setLoading(false);
+  };
+
   const handleAuth = () => {
-    if (!adminKey.trim()) return;
-    localStorage.setItem("mm_admin_key", adminKey);
+    if (!key.trim()) return;
+    localStorage.setItem("mm_admin_key", key);
     setAuthed(true); loadSchools();
   };
 
+  useEffect(() => { if (authed) loadSchools(); }, [authed]);
+
   const handleCreateSchool = async () => {
-    setMsg(""); setLoading(true);
+    setLoading(true); setMsg("");
     const d = await api("admin_create_school", form);
-    setMsg(d.data ? "✅ School created!" : d.error||"Failed");
-    if (d.data) { loadSchools(); setForm({}); }
+    if (d.data) { setMsg("✅ School created!"); loadSchools(); setForm({}); setView("schools"); }
+    else setMsg(d.error||"Failed");
     setLoading(false);
   };
 
   const handleCreateTeacher = async () => {
-    setMsg(""); setLoading(true);
+    setLoading(true); setMsg("");
     const d = await api("admin_create_teacher", {...form, school_id: selSchool?.id});
-    setMsg(d.data ? "✅ Teacher created!" : d.error||"Failed");
-    if (d.data) setForm({});
+    if (d.data) { setMsg("✅ Teacher created!"); loadTeachers(selSchool); setForm({}); setView("school_detail"); }
+    else setMsg(d.error||"Failed");
     setLoading(false);
   };
 
+  const inputStyle = (accent) => ({width:"100%",background:C.card2,border:`1.5px solid ${accent}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block",marginBottom:10});
+
   if (!authed) return (
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"24px 18px"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:32}}>
-        <BackBtn onClick={onBack} color={C.red}/><div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red}}>ADMIN PANEL</div>
-      </div>
-      <Card color={C.red} style={{maxWidth:400,margin:"0 auto"}}>
-        <div style={{fontSize:36,textAlign:"center",marginBottom:12}}>🔐</div>
-        <div style={{color:C.dim,fontSize:12,marginBottom:8}}>ADMIN SECRET KEY</div>
-        <input value={adminKey} onChange={e=>setAdminKey(e.target.value)} type="password" placeholder="Enter admin key"
-          style={{width:"100%",background:C.card2,border:`1.5px solid ${C.red}44`,borderRadius:10,padding:"11px 14px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:12,display:"block"}}/>
-        <Btn color={C.red} onClick={handleAuth}>🔐 ENTER</Btn>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"24px 18px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+      <BackBtn onClick={onBack} color={C.red} style={{alignSelf:"flex-start",marginBottom:24}}/>
+      <Card color={C.red} style={{maxWidth:360,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:36,marginBottom:12}}>🔐</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red,marginBottom:16}}>ADMIN ACCESS</div>
+        <input value={key} onChange={e=>setKey(e.target.value)} type="password" placeholder="Admin secret key"
+          style={inputStyle(C.red)} onKeyDown={e=>e.key==="Enter"&&handleAuth()}/>
+        <Btn color={C.red} onClick={handleAuth}>ENTER →</Btn>
       </Card>
     </div>
   );
 
-  return (
+  // ── Schools List ──
+  if (view==="schools") return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",overflowY:"auto"}}>
-      <div style={{background:C.card,borderBottom:`1px solid ${C.red}33`,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
-        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red}}>🔐 ADMIN PANEL</div>
+      <div style={{background:C.card,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10,borderBottom:`1px solid ${C.red}33`}}>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.red}}>🔐 ADMIN — SCHOOLS</div>
         <div style={{display:"flex",gap:8}}>
-          {["schools","teachers"].map(v=>(
-            <button key={v} onClick={()=>{setView(v);setMsg("");}} style={{background:view===v?`${C.red}22`:"none",border:`1px solid ${C.red}${view===v?"66":"22"}`,borderRadius:8,padding:"6px 12px",color:view===v?C.red:C.dim,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:9}}>
-              {v.toUpperCase()}
-            </button>
-          ))}
+          <button onClick={()=>setView("add_school")} style={{background:`${C.yellow}22`,border:`1px solid ${C.yellow}44`,borderRadius:10,padding:"7px 12px",color:C.yellow,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:9}}>+ SCHOOL</button>
           <BackBtn onClick={onBack} color={C.dim}/>
         </div>
       </div>
-
       <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
-        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:13,marginBottom:12,padding:"10px 14px",background:msg.startsWith("✅")?`${C.green}11`:`${C.red}11`,borderRadius:10}}>{msg}</div>}
-
-        {view==="schools" && (
-          <>
-            <Card color={C.yellow} style={{marginBottom:16}}>
-              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.yellow,marginBottom:12}}>➕ CREATE SCHOOL</div>
-              {[["School Name","name","text","St. Xavier's School"],["City","city","text","Mumbai"],["School Code","school_code","text","MATH001"]].map(([l,k,t,ph])=>(
-                <div key={k} style={{marginBottom:10}}>
-                  <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
-                  <input value={form[k]||""} onChange={e=>setForm({...form,[k]:k==="school_code"?e.target.value.toUpperCase():e.target.value})}
-                    type={t} placeholder={ph}
-                    style={{width:"100%",background:C.card2,border:`1.5px solid ${C.yellow}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
-                </div>
-              ))}
-              <Btn color={C.yellow} loading={loading} onClick={handleCreateSchool}>CREATE SCHOOL</Btn>
-            </Card>
-            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.dim,marginBottom:10}}>ALL SCHOOLS ({schools.length})</div>
-            {schools.map(s=>(
-              <div key={s.id} style={{background:C.card,border:`1px solid ${C.yellow}22`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div>
-                  <div style={{fontWeight:800,color:"white",fontSize:14}}>{s.name}</div>
-                  <div style={{color:C.dim,fontSize:12}}>{s.city}</div>
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>{s.school_code}</div>
-                  <div style={{fontSize:10,color:s.is_active?C.green:C.red}}>{s.is_active?"Active":"Inactive"}</div>
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-
-        {view==="teachers" && (
-          <Card color={C.cyan}>
-            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.cyan,marginBottom:12}}>➕ CREATE TEACHER</div>
-            <div style={{color:C.dim,fontSize:11,marginBottom:6}}>SCHOOL</div>
-            <select value={selSchool?.id||""} onChange={e=>setSelSchool(schools.find(s=>s.id===e.target.value)||null)}
-              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,marginBottom:10}}>
-              <option value="">Select school...</option>
-              {schools.map(s=><option key={s.id} value={s.id}>{s.name} ({s.school_code})</option>)}
-            </select>
-            {[["Teacher Name","name","text","Mrs. Sharma"],["Email","email","email","teacher@school.com"],["PIN (4-6 digits)","pin","password","••••••"]].map(([l,k,t,ph])=>(
-              <div key={k} style={{marginBottom:10}}>
-                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
-                <input value={form[k]||""} onChange={e=>setForm({...form,[k]:e.target.value})}
-                  type={t} placeholder={ph}
-                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
-              </div>
-            ))}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-              <div>
-                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>CLASS</div>
-                <select value={form.class_num||""} onChange={e=>setForm({...form,class_num:parseInt(e.target.value)})}
-                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14}}>
-                  <option value="">Select...</option>
-                  {[1,2,3,4,5].map(n=><option key={n} value={n}>Class {n}</option>)}
-                </select>
-              </div>
-              <div>
-                <div style={{color:C.dim,fontSize:11,marginBottom:4}}>SECTION</div>
-                <input value={form.section||""} onChange={e=>setForm({...form,section:e.target.value.toUpperCase()})}
-                  placeholder="A" maxLength={3}
-                  style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
-              </div>
+        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:12,padding:"8px 12px",background:msg.startsWith("✅")?`${C.green}11`:`${C.red}11`,borderRadius:10}}>{msg}</div>}
+        {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
+        {schools.map(s=>(
+          <button key={s.id} onClick={()=>loadTeachers(s)} style={{width:"100%",background:C.card,border:`1px solid ${C.yellow}33`,borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,textAlign:"left"}}>
+            <div>
+              <div style={{fontWeight:800,color:"white",fontSize:14}}>{s.name}</div>
+              <div style={{color:C.dim,fontSize:12}}>{s.city}</div>
             </div>
-            <Btn color={C.cyan} loading={loading} onClick={handleCreateTeacher}>CREATE TEACHER</Btn>
-          </Card>
-        )}
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>{s.school_code}</div>
+              <div style={{fontSize:10,color:s.is_active?C.green:C.red}}>{s.is_active?"Active":"Inactive"}</div>
+            </div>
+          </button>
+        ))}
+        {!loading&&schools.length===0&&<div style={{textAlign:"center",color:C.dim,padding:30}}>No schools yet. Create one!</div>}
       </div>
     </div>
   );
+
+  // ── Add School ──
+  if (view==="add_school") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setView("schools")} color={C.yellow}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.yellow}}>CREATE SCHOOL</div>
+      </div>
+      <Card color={C.yellow} style={{maxWidth:480}}>
+        {[["School Name","name","text","St. Xavier's School"],["City","city","text","Mumbai"],["School Code","school_code","text","STXAV001"]].map(([l,k,t,ph])=>(
+          <div key={k}>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+            <input value={form[k]||""} onChange={e=>setForm({...form,[k]:k==="school_code"?e.target.value.toUpperCase():e.target.value})}
+              type={t} placeholder={ph} style={inputStyle(C.yellow)}/>
+          </div>
+        ))}
+        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:10}}>{msg}</div>}
+        <Btn color={C.yellow} loading={loading} onClick={handleCreateSchool}>CREATE SCHOOL</Btn>
+      </Card>
+    </div>
+  );
+
+  // ── School Detail — Teachers List ──
+  if (view==="school_detail") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",overflowY:"auto"}}>
+      <div style={{background:C.card,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10,borderBottom:`1px solid ${C.cyan}33`}}>
+        <div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.cyan}}>{selSchool?.name}</div>
+          <div style={{fontSize:11,color:C.dim}}>Code: {selSchool?.school_code} · Teachers: {teachers.length}</div>
+        </div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setView("add_teacher")} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:10,padding:"7px 12px",color:C.cyan,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:9}}>+ TEACHER</button>
+          <BackBtn onClick={()=>setView("schools")} color={C.dim}/>
+        </div>
+      </div>
+      <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
+        {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
+        {teachers.map(t=>(
+          <button key={t.id} onClick={()=>loadStudents(t)} style={{width:"100%",background:C.card,border:`1px solid ${C.purple}33`,borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,textAlign:"left"}}>
+            <div>
+              <div style={{fontWeight:800,color:"white",fontSize:14}}>{t.name}</div>
+              <div style={{color:C.dim,fontSize:12}}>{t.email}</div>
+            </div>
+            <span style={{color:C.cyan,fontSize:20}}>›</span>
+          </button>
+        ))}
+        {!loading&&teachers.length===0&&<div style={{textAlign:"center",color:C.dim,padding:30}}>No teachers yet.</div>}
+      </div>
+    </div>
+  );
+
+  // ── Add Teacher ──
+  if (view==="add_teacher") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setView("school_detail")} color={C.cyan}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>ADD TEACHER — {selSchool?.name}</div>
+      </div>
+      <Card color={C.cyan} style={{maxWidth:480}}>
+        {[["Name","name","text","Mrs. Sharma"],["Email","email","email","teacher@school.com"],["PIN (4-6 digits)","pin","password","••••"]].map(([l,k,t,ph])=>(
+          <div key={k}>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+            <input value={form[k]||""} onChange={e=>setForm({...form,[k]:e.target.value})} type={t} placeholder={ph} style={inputStyle(C.cyan)}/>
+          </div>
+        ))}
+        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:10}}>{msg}</div>}
+        <Btn color={C.cyan} loading={loading} onClick={handleCreateTeacher}>ADD TEACHER</Btn>
+      </Card>
+    </div>
+  );
+
+  // ── Teacher Detail — Student List ──
+  if (view==="teacher_detail") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",overflowY:"auto"}}>
+      <div style={{background:C.card,padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10,borderBottom:`1px solid ${C.purple}33`}}>
+        <div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.purple}}>{selTeacher?.name}</div>
+          <div style={{fontSize:11,color:C.dim}}>{selSchool?.name} · Students: {students.length}</div>
+        </div>
+        <BackBtn onClick={()=>setView("school_detail")} color={C.dim}/>
+      </div>
+      <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
+        {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
+        {students.map(s=>(
+          <div key={s.id} style={{background:C.card,border:`1px solid ${C.purple}22`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
+            <div style={{background:`${C.purple}33`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.purple,flexShrink:0}}>
+              {String(s.roll_no).padStart(2,"0")}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:800,fontSize:14,color:"white"}}>{s.name}</div>
+              <div style={{fontSize:11,color:C.dim}}>Class {s.class_num}-{s.section} · Lv {s.level||1} · {s.xp||0} XP</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:10,color:C.dim}}>{s.last_active?new Date(s.last_active).toLocaleDateString("en-IN"):"Never"}</div>
+              <div style={{fontSize:10,color:s.streak_days>0?C.orange:C.dim}}>🔥{s.streak_days||0}</div>
+            </div>
+          </div>
+        ))}
+        {!loading&&students.length===0&&<div style={{textAlign:"center",color:C.dim,padding:30}}>No students under this teacher.</div>}
+      </div>
+    </div>
+  );
+
+  return null;
 }
 
 function PrivacyPolicy({ onBack }) {
@@ -6134,8 +6344,8 @@ export default function App() {
   if (screen === "entry")         return <><GlobalStyles/><EntryScreen onSelect={(s)=>setScreen(s)}/></>;
   if (screen === "student_entry") return <><GlobalStyles/><StudentEntry onBack={()=>setScreen("entry")} onSelect={(s)=>setScreen(s)}/></>;
   if (screen === "welcome")  return <><GlobalStyles/><Welcome  onRegister={() => setScreen("register")} onLogin={() => setScreen("login")} onPrivacy={() => { setPrevScreen("welcome"); setScreen("privacy"); }}/></>;
-  if (screen === "register") return <><GlobalStyles/><Register onBack={() => setScreen("welcome")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
-  if (screen === "login")    return <><GlobalStyles/><Login    onBack={() => setScreen("welcome")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
+  if (screen === "register") return <><GlobalStyles/><Register onBack={() => setScreen("student_entry")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
+  if (screen === "login")    return <><GlobalStyles/><Login    onBack={() => setScreen("student_entry")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
   if (screen === "home")     return <><GlobalStyles/><Home     child={child} onWorld={goWorld} onAbacus={() => setScreen("abacus")} onGames={() => setScreen("games")} onOlympiad={() => setScreen("olympiad")} onParent={() => setScreen("parent")} onRate={() => setShowRating(true)} onLogout={logout} onFeedback={goFeedback} onSettings={()=>setScreen('settings')} onThemeChange={handleThemeChange}/><FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
   if (screen === "paywall")  return <><GlobalStyles/><Paywall  world={world} child={child} onBack={() => setScreen("home")} onUnlock={handleUnlock}/></>;
   if (screen === "lessons")  return <><GlobalStyles/><LessonMap world={world} child={child} onBack={() => setScreen("home")} onLesson={l => { setLesson(l); setScreen("game"); }}/></>;
