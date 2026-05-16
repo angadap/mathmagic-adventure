@@ -5124,12 +5124,11 @@ function DailyQuiz({ child, onClose }) {
       SFX.dailyDone();
       db.track("daily_challenge_complete", child.id, null, { correct:true });
       const todayKey2 = new Date().toISOString().slice(0,10);
-      localStorage.setItem(`dq_${child.id}_${todayKey2}`, "1");
+      localStorage.setItem(`dq_done_${child.id}_${todayKey2}`, "1");
       setDone(true);
     }
     if (!correct) {
-      await db.completeDailyChallenge(child.id, challenge.id, false);
-      db.track("daily_challenge_complete", child.id, null, { correct:false });
+      db.track("daily_challenge_attempt", child.id, null, { correct:false });
     }
   };
 
@@ -5792,6 +5791,77 @@ function TeacherLogin({ onBack, onDone }) {
 }
 
 // ── TeacherDashboard Screen ───────────────────────────────────────
+
+// ── StudentActions ────────────────────────────────────────────────
+function StudentActions({ student, teacher, onRefresh, onClose }) {
+  const [view,    setView]    = useState("menu"); // menu|pin|progress
+  const [newPin,  setNewPin]  = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState("");
+  const [prog,    setProg]    = useState(null);
+
+  const api = (action,body={}) => schoolApi(action,{...body,teacher_id:teacher.id,session_token:teacher.session_token||""});
+
+  const changePin = async () => {
+    if (newPin.length<4) { setMsg("Enter 4-digit PIN"); return; }
+    setLoading(true);
+    const d = await api("update_student_pin",{student_id:student.id,new_pin:newPin});
+    setMsg(d.ok?"✅ PIN updated!":d.error||"Failed"); setLoading(false);
+    if (d.ok) setTimeout(()=>{setView("menu");setMsg("");},1200);
+  };
+
+  const deleteStudent = async () => {
+    if (!confirm(`Delete ${student.name}? This cannot be undone.`)) return;
+    setLoading(true);
+    const d = await api("delete_student",{student_id:student.id});
+    if (d.ok) { onRefresh(); onClose(); } else setMsg(d.error||"Failed");
+    setLoading(false);
+  };
+
+  const loadProgress = async () => {
+    setLoading(true);
+    const d = await api("get_student_progress",{student_id:student.id});
+    setProg(d.data||[]); setView("progress"); setLoading(false);
+  };
+
+  if (view==="pin") return (
+    <div style={{marginTop:10,padding:"10px",background:C.card2,borderRadius:10}}>
+      <div style={{color:C.dim,fontSize:11,marginBottom:6}}>New 4-digit PIN for {student.name}</div>
+      <input value={newPin} onChange={e=>setNewPin(e.target.value.replace(/\D/g,"").slice(0,4))} type="password" placeholder="••••" maxLength={4}
+        style={{width:"100%",background:C.bg,border:`1.5px solid ${C.cyan}44`,borderRadius:8,padding:"8px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:16,letterSpacing:4,textAlign:"center",display:"block",marginBottom:8}}/>
+      {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:11,marginBottom:6}}>{msg}</div>}
+      <div style={{display:"flex",gap:8}}>
+        <Btn color={C.cyan} loading={loading} onClick={changePin}>SAVE</Btn>
+        <button onClick={()=>setView("menu")} style={{flex:1,background:"none",border:`1px solid ${C.dim}44`,borderRadius:10,padding:"10px",color:C.dim,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>CANCEL</button>
+      </div>
+    </div>
+  );
+
+  if (view==="progress") return (
+    <div style={{marginTop:10,padding:"10px",background:C.card2,borderRadius:10}}>
+      <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:C.cyan,marginBottom:8}}>📊 {student.name}'s PROGRESS</div>
+      {loading&&<div style={{color:C.dim,fontSize:12}}>Loading...</div>}
+      {prog&&prog.length===0&&<div style={{color:C.dim,fontSize:12}}>No lessons completed yet.</div>}
+      {prog&&prog.slice(0,8).map((p,i)=>(
+        <div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:`1px solid ${C.dim}11`,fontSize:12}}>
+          <span style={{color:C.dim}}>{p.lesson_id?.replace("_s",": Set ")}</span>
+          <span style={{color:"white"}}>{"⭐".repeat(p.stars_earned||0)} {p.correct_count||0}/{p.total_questions||20}</span>
+        </div>
+      ))}
+      {prog&&prog.length>8&&<div style={{color:C.dim,fontSize:10,marginTop:4}}>+{prog.length-8} more lessons</div>}
+      <button onClick={()=>setView("menu")} style={{marginTop:8,background:"none",border:"none",color:C.dim,fontSize:12,cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>← Back</button>
+    </div>
+  );
+
+  return (
+    <div style={{marginTop:10,display:"flex",gap:8,flexWrap:"wrap"}}>
+      <button onClick={loadProgress} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:8,padding:"6px 10px",color:C.cyan,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>📊 Progress</button>
+      <button onClick={()=>setView("pin")} style={{background:`${C.yellow}22`,border:`1px solid ${C.yellow}44`,borderRadius:8,padding:"6px 10px",color:C.yellow,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>🔑 Change PIN</button>
+      <button onClick={deleteStudent} style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",color:C.red,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>🗑 Delete</button>
+    </div>
+  );
+}
+
 function TeacherDashboard({ teacher, onLogout }) {
   const [students,   setStudents]   = useState([]);
   const [view,       setView]       = useState("classes"); // classes|list|add|import
@@ -5801,7 +5871,8 @@ function TeacherDashboard({ teacher, onLogout }) {
   const [form,       setForm]       = useState({name:"",roll_no:"",pin:"",class_num:1,section:"A"});
   const [saving,     setSaving]     = useState(false);
   const [saveMsg,    setSaveMsg]    = useState("");
-  const [classMap,   setClassMap]   = useState({}); // {"1-A": count}
+  const [classMap,   setClassMap]   = useState({});
+  const [selStudent, setSelStudent] = useState(null); // {"1-A": count}
 
   // Load all students once to build class/section list
   const loadAll = async () => {
@@ -5928,18 +5999,24 @@ function TeacherDashboard({ teacher, onLogout }) {
           </Card>
         ) : (
           <div>
-            <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.dim,marginBottom:10}}>STUDENTS — {students.length} total</div>
+            {selClass && <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <button onClick={()=>{setView("classes");setSelClass(null);setStudents([]);}} style={{background:"none",border:`1px solid ${C.dim}44`,borderRadius:8,padding:"5px 10px",color:C.dim,cursor:"pointer",fontSize:12,fontFamily:"'Nunito',sans-serif"}}>← Classes</button>
+              <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:C.dim}}>Class {selClass.class_num}-{selClass.section} · {students.length} students</div>
+            </div>}
             {loading && <div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
             {error   && <div style={{color:C.red,fontSize:13,marginBottom:10}}>{error}</div>}
             {students.map((s,i)=>(
-              <div key={s.id} style={{background:C.card,border:`1px solid ${C.purple}22`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
-                <div style={{background:`${C.purple}33`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.purple,flexShrink:0}}>
-                  {String(s.roll_no).padStart(2,"0")}
+              <div key={s.id} style={{background:C.card,border:`1px solid ${C.purple}22`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{background:`${C.purple}33`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.purple,flexShrink:0}}>{String(s.roll_no).padStart(2,"0")}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:800,fontSize:14,color:"white"}}>{s.name}</div>
+                    <div style={{fontSize:11,color:C.dim}}>Lv {s.level||1} · {s.xp||0} XP · 🔥{s.streak_days||0}</div>
+                  </div>
+                  <button onClick={()=>setSelStudent(selStudent?.id===s.id?null:s)} style={{background:"none",border:`1px solid ${C.cyan}44`,borderRadius:8,padding:"5px 8px",color:C.cyan,cursor:"pointer",fontSize:11}}>{selStudent?.id===s.id?"▲":"▼"}</button>
                 </div>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:800,fontSize:14,color:"white"}}>{s.name}</div>
-                  <div style={{fontSize:11,color:C.dim}}>Lv {s.level||1} · {s.xp||0} XP · {s.coins||0} coins</div>
-                </div>
+                {selStudent?.id===s.id && <StudentActions student={s} teacher={teacher} onRefresh={load} onClose={()=>setSelStudent(null)}/>}
+              </div>
                 <div style={{textAlign:"right"}}>
                   <div style={{fontSize:10,color:C.dim}}>{s.last_active ? new Date(s.last_active).toLocaleDateString("en-IN") : "Never"}</div>
                   <div style={{fontSize:10,color:s.streak_days>0?C.orange:C.dim}}>🔥 {s.streak_days||0} days</div>
@@ -6185,8 +6262,11 @@ function AdminPanel({ onBack }) {
 
   const loadTeachers = async (school) => {
     setLoading(true); setSelSchool(school); setTeachers([]); setStudents([]);
-    const d = await api("admin_list_teachers", {school_id: school.id});
-    if (d.data) setTeachers(d.data); else setMsg(d.error||"Failed");
+    try {
+      const d = await api("admin_list_teachers", {school_id: school.id});
+      setTeachers(Array.isArray(d.data)?d.data:[]);
+      if (!d.data && d.error) setMsg(d.error);
+    } catch(e) { setMsg("Network error"); }
     setView("school_detail"); setLoading(false);
   };
 
@@ -6273,7 +6353,7 @@ function AdminPanel({ onBack }) {
         <BackBtn onClick={()=>setView("schools")} color={C.yellow}/>
         <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.yellow}}>CREATE SCHOOL</div>
       </div>
-      <Card color={C.yellow} style={{maxWidth:480}}>
+      <Card color={C.yellow} style={{maxWidth:480,margin:"0 auto"}}>
         {[["School Name","name","text","St. Xavier's School"],["City","city","text","Mumbai"],["School Code","school_code","text","STXAV001"]].map(([l,k,t,ph])=>(
           <div key={k}>
             <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
@@ -6765,7 +6845,7 @@ export default function App() {
   if (screen === "parent")   return <><GlobalStyles/><ParentDash child={child} onBack={() => setScreen("home")}/></>;
   if (screen === "feedback") return <><GlobalStyles/><FeedbackScreen child={child} currentScreen={prevScreen} prefillCategory={feedbackPrefill} onBack={() => setScreen(prevScreen)}/></>;
   if (screen === "games")    return <><GlobalStyles/><GamesHub child={child} onBack={() => setScreen("home")}/></>;
-  if (screen === "student_login") return <><GlobalStyles/><StudentLogin onBack={()=>setScreen("student_entry")} onDone={(s)=>{setSchoolStudent(s);setScreen("home");}}/></>;
+  if (screen === "student_login") return <><GlobalStyles/><StudentLogin onBack={()=>setScreen("student_entry")} onDone={(s)=>{setSchoolStudent(s);setChild({...s,id:s.id,name:s.name,avatar:"🧒",class_num:s.class_num,xp:s.xp||0,coins:s.coins||0,level:s.level||1,streak_days:s.streak_days||0,is_school_student:true});setScreen("home");}}/></>;
   if (screen === "teacher_login") return <><GlobalStyles/><TeacherLogin onBack={()=>setScreen("entry")} onDone={(t)=>{setTeacher(t);localStorage.setItem("mm_teacher_session",JSON.stringify(t));setScreen("teacher_dash");}}/></>;
   if (screen === "teacher_dash")  return <><GlobalStyles/><TeacherDashboard teacher={teacher} onLogout={()=>{setTeacher(null);setScreen("entry");}}/></>;
   if (screen === "admin_panel")   return <><GlobalStyles/><AdminPanel onBack={()=>setScreen("entry")}/></>;
