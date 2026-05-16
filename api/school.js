@@ -355,6 +355,24 @@ export default async function handler(req, res) {
       return res.status(200).json({data:r.data});
     }
 
+        if (action==="update_student_pin") {
+      const teacher = await verifyTeacher(teacher_id, session_token);
+      if (!teacher) return res.status(401).json({error:"Unauthorized"});
+      const {student_id, new_pin} = req.body;
+      if (!isUUID(student_id)||!new_pin) return res.status(400).json({error:"Missing fields"});
+      const pin_hash = await hashPin(String(new_pin).slice(0,4));
+      const r = await sb("students","PATCH",{pin_hash},`?id=eq.${student_id}&school_id=eq.${teacher.school_id}`);
+      return res.status(200).json({ok:r.ok});
+    }
+    if (action==="delete_student") {
+      const teacher = await verifyTeacher(teacher_id, session_token);
+      if (!teacher) return res.status(401).json({error:"Unauthorized"});
+      const {student_id} = req.body;
+      if (!isUUID(student_id)) return res.status(400).json({error:"Invalid"});
+      await sb("student_progress","DELETE",null,`?student_id=eq.${student_id}`).catch(()=>{});
+      const r = await sb("students","DELETE",null,`?id=eq.${student_id}&school_id=eq.${teacher.school_id}`);
+      return res.status(200).json({ok:r.ok});
+    }
         return res.status(400).json({error:"Unknown action"});
 
   } catch(err) {
