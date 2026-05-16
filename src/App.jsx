@@ -303,31 +303,51 @@ function LessonTimeline({ lessons, progress }) {
   if (!lessons || !lessons.length) return null;
   const setsDone = (lid) => Array.from({length:20},(_,i)=>i).filter(i=>
     progress.some(p=>p.lesson_id===`${lid}_s${i}`&&(p.stars_earned||0)>=1)).length;
+  const lastSet = (lid) => {
+    for(let i=19;i>=0;i--) if(progress.some(p=>p.lesson_id===`${lid}_s${i}`)) return i+1;
+    return 0;
+  };
+  const totalDone = lessons.reduce((s,l)=>s+setsDone(l.id),0);
+  const totalSets = lessons.length*20;
   return (
     <div style={{marginBottom:16}}>
-      <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:C.dim,marginBottom:10}}>📍 LESSON PROGRESS MAP</div>
-      <div style={{position:"relative",paddingLeft:20}}>
-        <div style={{position:"absolute",left:8,top:8,bottom:8,width:2,background:`${C.purple}33`,borderRadius:2}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:C.dim}}>📍 PROGRESS MAP</div>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:9,color:C.cyan}}>{totalDone}/{totalSets} sets</div>
+      </div>
+      <div style={{position:"relative",paddingLeft:24}}>
+        <div style={{position:"absolute",left:10,top:10,bottom:10,width:2,background:`${C.purple}22`,borderRadius:2}}/>
         {lessons.map((l,i)=>{
-          const done = setsDone(l.id);
-          const pct  = Math.round(done/20*100);
-          const started = done>0;
-          const complete= done===20;
+          const done=setsDone(l.id), last=lastSet(l.id);
+          const pct=Math.round(done/20*100);
+          const started=done>0, complete=done===20;
           return (
-            <div key={l.id} style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:12,position:"relative"}}>
-              <div style={{width:16,height:16,borderRadius:"50%",background:complete?C.green:started?C.cyan:C.card2,border:`2px solid ${complete?C.green:started?C.cyan:C.dim+"44"}`,flexShrink:0,marginTop:2,zIndex:1}}/>
-              <div style={{flex:1,background:C.card,borderRadius:12,padding:"8px 12px",border:`1px solid ${complete?C.green+"44":started?C.cyan+"33":C.dim+"22"}`}}>
+            <div key={l.id} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10,position:"relative"}}>
+              <div style={{width:18,height:18,borderRadius:"50%",background:complete?C.green:started?C.yellow:C.card2,border:`2px solid ${complete?C.green:started?C.yellow:C.dim+"33"}`,flexShrink:0,marginTop:3,zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8}}>
+                {complete?"✓":started?"▶":""}
+              </div>
+              <div style={{flex:1,background:complete?`${C.green}11`:started?`${C.yellow}11`:C.card,borderRadius:12,padding:"8px 10px",border:`1px solid ${complete?C.green+"33":started?C.yellow+"33":C.dim+"11"}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{fontWeight:700,fontSize:13,color:complete?C.green:started?"white":C.dim}}>
-                    {l.emoji} L{i+1}: {l.title}
+                  <div style={{fontWeight:700,fontSize:12,color:complete?C.green:started?"white":C.dim}}>
+                    {l.emoji||"📚"} L{i+1}: {l.title}
                   </div>
-                  <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:9,color:complete?C.green:started?C.cyan:C.dim}}>
-                    {done}/20
+                  <div style={{fontSize:9,color:complete?C.green:started?C.yellow:C.dim,fontFamily:"'Orbitron',sans-serif"}}>
+                    {complete?"DONE":started?`Set ${last}/20`:"–"}
                   </div>
                 </div>
-                {started&&<div style={{background:C.card2,borderRadius:4,height:4,marginTop:6,overflow:"hidden"}}>
-                  <div style={{width:`${pct}%`,height:"100%",background:complete?C.green:C.cyan,borderRadius:4}}/>
-                </div>}
+                {started&&(
+                  <div style={{marginTop:6}}>
+                    <div style={{background:C.card2,borderRadius:4,height:5,overflow:"hidden"}}>
+                      <div style={{width:`${pct}%`,height:"100%",background:complete?C.green:C.yellow,borderRadius:4,transition:"width 0.5s"}}/>
+                    </div>
+                    <div style={{display:"flex",gap:2,marginTop:4,flexWrap:"wrap"}}>
+                      {Array.from({length:20},(_,si)=>{
+                        const isDone=progress.some(p=>p.lesson_id===`${l.id}_s${si}`&&(p.stars_earned||0)>=1);
+                        return <div key={si} style={{width:8,height:8,borderRadius:2,background:isDone?C.green:`${C.dim}33`,title:`Set ${si+1}`}}/>;
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -3359,7 +3379,8 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
       <div style={{ position:"relative", zIndex:2, padding:"0 18px 10px" }}>
         <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:11, color:C.purple, letterSpacing:2, marginBottom:10 }}>🗺️ GALACTIC WORLDS</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {WORLDS.filter(cw => cw.id === child.class_num || child.id === "admin-001").map(cw => (
+          <LessonTimeline lessons={myLessons} progress={progress}/>
+        {WORLDS.filter(cw => cw.id === child.class_num || child.id === "admin-001").map(cw => (
             <button key={cw.id} onClick={() => onWorld(cw, true)} style={{
               background: `linear-gradient(135deg,${cw.color}16,${cw.color}08)`,
               border:`2px solid ${cw.color}44`, borderRadius:17, padding:"13px 15px",
