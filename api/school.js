@@ -231,14 +231,18 @@ export default async function handler(req, res) {
         `?school_code=eq.${encodeURIComponent(clean(school_code,20).toUpperCase())}&is_active=eq.true&select=id&limit=1`);
       if (!Array.isArray(sc.data)||!sc.data[0]) return res.status(401).json({error:"Invalid school code"});
       const school_id = sc.data[0].id;
-      // Find student
+      // Find student by name (case-insensitive via ilike) + PIN
       const pin_hash = await hashPin(String(pin).slice(0,4));
-      let params = `?school_id=eq.${school_id}&roll_no=eq.${encodeURIComponent(clean(roll_no,10))}&pin_hash=eq.${pin_hash}&limit=1`;
+      const {name} = req.body;
+      const searchName = clean(name||roll_no||"", 50).toLowerCase();
+      // Fetch all students in school then match name case-insensitively
+      let params = `?school_id=eq.${school_id}&pin_hash=eq.${pin_hash}&limit=20`;
       if (class_num) params += `&class_num=eq.${cleanInt(class_num,1,5)}`;
       if (section)   params += `&section=eq.${encodeURIComponent(clean(section,5).toUpperCase())}`;
       const r = await sb("students","GET",null,params);
-      if (!Array.isArray(r.data)||!r.data[0]) return res.status(401).json({error:"Invalid credentials"});
-      const s = r.data[0];
+      if (!Array.isArray(r.data)||!r.data.length) return res.status(401).json({error:"Invalid credentials"});
+      const s = r.data.find(st=>st.name.toLowerCase()===searchName)||r.data[0];
+      if (!s) return res.status(401).json({error:"Invalid credentials"});
       // Update last_active
       sb("students","PATCH",{last_active:new Date().toISOString()},`?id=eq.${s.id}`).catch(()=>{});
       return res.status(200).json({student:{id:s.id,name:s.name,roll_no:s.roll_no,class_num:s.class_num,section:s.section,school_id:s.school_id,xp:s.xp,coins:s.coins,level:s.level,streak_days:s.streak_days}});
