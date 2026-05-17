@@ -298,64 +298,106 @@ function getDifficulty(progress, lessonId) {
   return              {level:"medium", suggestSkip:false, extraHints:false};
 }
 
-// ── LessonTimeline ────────────────────────────────────────────────
+// ── LessonTimeline — rocket launch style ─────────────────────────
 function LessonTimeline({ lessons, progress }) {
-  if (!lessons || !lessons.length) return null;
-  const setsDone = (lid) => Array.from({length:20},(_,i)=>i).filter(i=>
-    progress.some(p=>p.lesson_id===`${lid}_s${i}`&&(p.stars_earned||0)>=1)).length;
-  const lastSet = (lid) => {
-    for(let i=19;i>=0;i--) if(progress.some(p=>p.lesson_id===`${lid}_s${i}`)) return i+1;
-    return 0;
-  };
-  const totalDone = lessons.reduce((s,l)=>s+setsDone(l.id),0);
-  const totalSets = lessons.length*20;
+  const [expanded, setExpanded] = useState(null);
+  if (!lessons?.length) return null;
+
+  const setsDone = (lid) => Array.from({length:20},(_,i)=>i)
+    .filter(i=>progress.some(p=>p.lesson_id===`${lid}_s${i}`&&(p.stars_earned||0)>=1)).length;
+  const lastSet = (lid) => { for(let i=19;i>=0;i--) if(progress.some(p=>p.lesson_id===`${lid}_s${i}`)) return i+1; return 0; };
+
+  // Current lesson = last one with any progress
+  const currentIdx = (() => { for(let i=lessons.length-1;i>=0;i--) if(setsDone(lessons[i].id)>0) return i; return 0; })();
+
   return (
-    <div style={{marginBottom:16}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:C.dim}}>📍 PROGRESS MAP</div>
-        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:9,color:C.cyan}}>{totalDone}/{totalSets} sets</div>
-      </div>
-      <div style={{position:"relative",paddingLeft:24}}>
-        <div style={{position:"absolute",left:10,top:10,bottom:10,width:2,background:`${C.purple}22`,borderRadius:2}}/>
-        {lessons.map((l,i)=>{
+    <div style={{marginBottom:20,position:"relative",overflow:"hidden"}}>
+      <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:10,color:C.dim,marginBottom:12}}>🚀 MISSION PROGRESS</div>
+
+      {/* Rocket trail */}
+      <div style={{position:"relative",paddingBottom:8}}>
+        {/* Curved trail SVG */}
+        <svg width="100%" height={lessons.length*72+20} style={{position:"absolute",left:0,top:0,pointerEvents:"none"}}>
+          <path d={`M 28 ${lessons.length*72} Q 28 ${lessons.length*36} 28 20`}
+            stroke={`${C.purple}44`} strokeWidth="3" fill="none" strokeDasharray="6,4"/>
+        </svg>
+
+        {/* Milestones — rendered bottom to top (lesson 1 at bottom like rocket launch) */}
+        {[...lessons].reverse().map((l,ri)=>{
+          const i = lessons.length-1-ri;
           const done=setsDone(l.id), last=lastSet(l.id);
           const pct=Math.round(done/20*100);
-          const started=done>0, complete=done===20;
+          const complete=done===20, started=done>0, isCurrent=i===currentIdx&&started;
+          const isOpen=expanded===l.id;
+          const dotColor=complete?C.green:isCurrent?C.yellow:started?C.cyan:C.dim+"66";
+
           return (
-            <div key={l.id} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10,position:"relative"}}>
-              <div style={{width:18,height:18,borderRadius:"50%",background:complete?C.green:started?C.yellow:C.card2,border:`2px solid ${complete?C.green:started?C.yellow:C.dim+"33"}`,flexShrink:0,marginTop:3,zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8}}>
-                {complete?"✓":started?"▶":""}
+            <div key={l.id} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:10,position:"relative",zIndex:1}}>
+              {/* Dot */}
+              <div style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center"}}>
+                <div onClick={()=>setExpanded(isOpen?null:l.id)} style={{width:20,height:20,borderRadius:"50%",background:dotColor,border:`3px solid ${dotColor}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,boxShadow:isCurrent?`0 0 12px ${C.yellow}`:complete?`0 0 8px ${C.green}`:""  }}>
+                  {complete?"✓":isCurrent?"▶":""}
+                </div>
               </div>
-              <div style={{flex:1,background:complete?`${C.green}11`:started?`${C.yellow}11`:C.card,borderRadius:12,padding:"8px 10px",border:`1px solid ${complete?C.green+"33":started?C.yellow+"33":C.dim+"11"}`}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                  <div style={{fontWeight:700,fontSize:12,color:complete?C.green:started?"white":C.dim}}>
-                    {l.emoji||"📚"} L{i+1}: {l.title}
+
+              {/* Card */}
+              <div style={{flex:1,background:isCurrent?`${C.yellow}15`:complete?`${C.green}11`:C.card,border:`1.5px solid ${isCurrent?C.yellow:complete?C.green:C.dim+"22"}`,borderRadius:14,overflow:"hidden",transition:"all 0.2s"}}>
+                {/* Header — always visible, tappable */}
+                <div onClick={()=>setExpanded(isOpen?null:l.id)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",cursor:"pointer"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:18}}>{l.emoji||"📚"}</span>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:12,color:complete?C.green:isCurrent?C.yellow:"white"}}>L{i+1}: {l.title}</div>
+                      <div style={{fontSize:10,color:C.dim,marginTop:1}}>
+                        {complete?"✅ Complete":started?`Set ${last} of 20`:"Not started"}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{fontSize:9,color:complete?C.green:started?C.yellow:C.dim,fontFamily:"'Orbitron',sans-serif"}}>
-                    {complete?"DONE":started?`Set ${last}/20`:"–"}
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    {started&&<div style={{fontFamily:"'Orbitron',sans-serif",fontSize:9,color:complete?C.green:C.yellow}}>{pct}%</div>}
+                    {isCurrent&&<div style={{fontSize:8,background:C.yellow,color:"#000",borderRadius:6,padding:"2px 6px",fontFamily:"'Orbitron',sans-serif"}}>HERE</div>}
+                    <div style={{color:C.dim,fontSize:12}}>{isOpen?"▲":"▼"}</div>
                   </div>
                 </div>
-                {started&&(
-                  <div style={{marginTop:6}}>
-                    <div style={{background:C.card2,borderRadius:4,height:5,overflow:"hidden"}}>
-                      <div style={{width:`${pct}%`,height:"100%",background:complete?C.green:C.yellow,borderRadius:4,transition:"width 0.5s"}}/>
-                    </div>
-                    <div style={{display:"flex",gap:2,marginTop:4,flexWrap:"wrap"}}>
+
+                {/* Progress bar — always visible if started */}
+                {started&&<div style={{height:3,background:C.card2,margin:"0 12px 8px"}}>
+                  <div style={{width:`${pct}%`,height:"100%",background:complete?C.green:C.yellow,borderRadius:2,transition:"width 0.5s"}}/>
+                </div>}
+
+                {/* Expanded: set dots grid */}
+                {isOpen&&(
+                  <div style={{padding:"8px 12px 12px"}}>
+                    <div style={{color:C.dim,fontSize:10,marginBottom:6}}>Sets completed:</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:3}}>
                       {Array.from({length:20},(_,si)=>{
                         const isDone=progress.some(p=>p.lesson_id===`${l.id}_s${si}`&&(p.stars_earned||0)>=1);
-                        return <div key={si} style={{width:8,height:8,borderRadius:2,background:isDone?C.green:`${C.dim}33`,title:`Set ${si+1}`}}/>;
+                        const stars=progress.find(p=>p.lesson_id===`${l.id}_s${si}`)?.stars_earned||0;
+                        return (
+                          <div key={si} style={{aspectRatio:"1",borderRadius:4,background:isDone?C.green:`${C.dim}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,color:isDone?"white":C.dim,fontWeight:700}} title={`Set ${si+1}`}>
+                            {isDone?stars||"✓":si+1}
+                          </div>
+                        );
                       })}
                     </div>
+                    <div style={{color:C.dim,fontSize:10,marginTop:8}}>{done} of 20 sets complete</div>
                   </div>
                 )}
               </div>
             </div>
           );
         })}
+
+        {/* Rocket at bottom */}
+        <div style={{display:"flex",alignItems:"center",gap:10,paddingLeft:4}}>
+          <div style={{fontSize:28,animation:"floatUp 1.5s ease-in-out infinite"}}>🚀</div>
+          <div style={{color:C.dim,fontSize:11}}>Your journey starts here!</div>
+        </div>
       </div>
     </div>
   );
 }
+
 // ── ProgressMap ───────────────────────────────────────────────────
 function ProgressMap({ child, lessons, progress, world, onSelectSet }) {
   const completedSets = (lid) => Array.from({length:20},(_,i)=>i).filter(i=>progress.some(p=>p.lesson_id===`${lid}_s${i}`&&(p.stars_earned||0)>=1)).length;
