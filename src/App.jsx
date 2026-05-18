@@ -5947,16 +5947,7 @@ function TeacherDashboard({ teacher, onLogout }) {
   const load = () => selClass ? loadClass(selClass) : loadAll();
   useEffect(()=>{ loadAll(); },[]);
 
-  const handleAdd = async () => {
-    if (!form.name.trim()||!form.roll_no.trim()||form.pin.length<4) { setSaveMsg("Fill all fields + 4-digit PIN"); return; }
-    setSaving(true); setSaveMsg("");
-    try {
-      const d = await schoolApi("create_student",{...form,teacher_id:teacher.id,session_token:teacher.session_token||""});
-      if (d.data) { setSaveMsg("✅ Student added!"); setForm({name:"",roll_no:"",pin:"",class_num:form.class_num,section:form.section}); loadAll(); setTimeout(()=>setView("classes"),1200); }
-      else setSaveMsg(d.error||"Failed");
-    } catch(e) { setSaveMsg("Network error"); }
-    setSaving(false);
-  };
+  // Add student removed — admin only
 
   const avg = students.length ? Math.round(students.reduce((s,st)=>s+(st.xp||0),0)/students.length) : 0;
   const top = students[0];
@@ -5970,8 +5961,8 @@ function TeacherDashboard({ teacher, onLogout }) {
           <div style={{fontSize:11,color:C.dim}}>{selClass?`Class ${selClass.class_num}-${selClass.section}`:"All Classes"}</div>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>{if(view==="add"){setView(selClass?"list":"classes");}else{setSelStudent(null);setView("add");}}} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:10,padding:"8px 14px",color:C.cyan,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:10}}>
-            {view==="add"?"📋 LIST":"➕ ADD"}
+          <button onClick={()=>{setSelStudent(null);}} style={{display:"none"}}>
+            LIST
           </button>
           <button onClick={onLogout} style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:10,padding:"8px 12px",color:C.red,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif",fontWeight:700}}>LOGOUT</button>
         </div>
@@ -5996,7 +5987,7 @@ function TeacherDashboard({ teacher, onLogout }) {
             {Object.keys(classMap).length===0&&!loading&&(
               <div style={{textAlign:"center",padding:30}}>
                 <div style={{color:C.dim,fontSize:13,marginBottom:16}}>No students yet.</div>
-                <Btn color={C.cyan} onClick={()=>setView("add")}>➕ Add First Student</Btn>
+                
               </div>
             )}
             {Object.keys(classMap).sort().map(k=>{
@@ -6011,10 +6002,10 @@ function TeacherDashboard({ teacher, onLogout }) {
                 </button>
               );
             })}
-            <button onClick={()=>setView("add")} style={{width:"100%",background:`${C.green}15`,border:`1.5px dashed ${C.green}44`,borderRadius:14,padding:"14px",cursor:"pointer",color:C.green,fontFamily:"'Nunito',sans-serif",fontWeight:800,fontSize:13,marginTop:4}}>➕ Add New Student</button>
+            
           </div>
         )}
-        {view==="add" ? (
+        {false ? (
           <Card color={C.cyan}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
               <button onClick={()=>setView("classes")} style={{background:"none",border:`1px solid ${C.dim}44`,borderRadius:8,padding:"6px 10px",color:C.dim,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontSize:12}}>← Back</button>
@@ -6461,6 +6452,46 @@ function AdminPanel({ onBack }) {
     </div>
   );
 
+  // ── Add Student (Admin only) ──
+  if (view==="add_student") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setView("teacher_detail")} color={C.cyan}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>ADD STUDENT — {selTeacher?.name}</div>
+      </div>
+      <Card color={C.cyan} style={{maxWidth:480,margin:"0 auto"}}>
+        {[["Name","name","text","Full name"],["Roll No","roll_no","text","01"],["PIN (4 digits)","pin","password","••••"]].map(([l,k,t,ph])=>(
+          <div key={k} style={{marginBottom:10}}>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+            <input value={form[k]||""} onChange={e=>setForm({...form,[k]:e.target.value})} type={t} placeholder={ph}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+          </div>
+        ))}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+          <div>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>CLASS</div>
+            <select value={form.class_num||1} onChange={e=>setForm({...form,class_num:parseInt(e.target.value)})}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14}}>
+              {["Nursery","Jr KG","Sr KG","Class 1","Class 2","Class 3","Class 4","Class 5"].map((n,i)=><option key={i} value={i} >{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>SECTION</div>
+            <input value={form.section||"A"} onChange={e=>setForm({...form,section:e.target.value.toUpperCase().slice(0,3)})} placeholder="A"
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+          </div>
+        </div>
+        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:8}}>{msg}</div>}
+        <Btn color={C.cyan} loading={loading} onClick={async()=>{
+          setLoading(true);setMsg("");
+          const d=await api("create_student_admin",{...form,teacher_id:selTeacher?.id,school_id:selSchool?.id});
+          if(d.data){setMsg("✅ Student added!");setForm({});}else setMsg(d.error||"Failed");
+          setLoading(false);
+        }}>ADD STUDENT</Btn>
+      </Card>
+    </div>
+  );
+
   // ── Teacher Detail — Student List ──
   if (view==="teacher_detail") return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",overflowY:"auto"}}>
@@ -6469,7 +6500,8 @@ function AdminPanel({ onBack }) {
           <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:12,color:C.purple}}>{selTeacher?.name}</div>
           <div style={{fontSize:11,color:C.dim}}>{selSchool?.name} · Students: {students.length}</div>
         </div>
-        <BackBtn onClick={()=>setView("school_detail")} color={C.dim}/>
+        <button onClick={()=>setView("add_student")} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:10,padding:"7px 12px",color:C.cyan,cursor:"pointer",fontFamily:"'Orbitron',sans-serif",fontSize:9}}>+ STUDENT</button>
+          <BackBtn onClick={()=>setView("school_detail")} color={C.dim}/>
       </div>
       <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
         {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
