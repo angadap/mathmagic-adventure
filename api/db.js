@@ -154,6 +154,15 @@ export default async function handler(req, res) {
     const user = await verifyToken(token);
     if (!user?.id) return res.status(401).json({ error: "Unauthorized — please log in" });
 
+    if (action === "get_progress") {
+      const { child_id } = req.body;
+      if (!isValidUUID(child_id)) return res.status(400).json({ error:"Invalid child_id" });
+      const chk = await sbQuery("children","GET",null,`?id=eq.${encodeURIComponent(child_id)}&parent_id=eq.${encodeURIComponent(user.id)}&select=id`);
+      if (!Array.isArray(chk.data)||!chk.data[0]) return res.status(403).json({ error:"Forbidden" });
+      const r = await sbQuery("progress","GET",null,`?child_id=eq.${encodeURIComponent(child_id)}&order=completed_at.desc`);
+      return res.status(200).json({ data: r.data });
+    }
+
     if (action === "get_children") {
       if (!isValidUUID(req.body.parent_id) || req.body.parent_id !== user.id)
         return res.status(403).json({ error: "Forbidden" });
