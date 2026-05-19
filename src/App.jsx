@@ -847,11 +847,11 @@ const db = {
   },
 
   async getProgress(cid) {
-    const sb = await this.getSb();
-    if (sb) {
-      const r = await sb.select("progress", { child_id: cid });
-      if (!r.error) return { data:r.data, error:null };
-    }
+    try {
+      const res = await fetch("/api/db",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${this._token||""}`},body:JSON.stringify({action:"get_progress",child_id:cid})});
+      const j = await res.json();
+      if (j.data) { MEM.progress = [...MEM.progress.filter(p=>p.child_id!==cid), ...j.data]; return {data:j.data,error:null}; }
+    } catch(e) {}
     return { data:MEM.progress.filter(p=>p.child_id===cid), error:null };
   },
 
@@ -3368,9 +3368,9 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
         <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:11, color:C.purple, letterSpacing:2, marginBottom:10 }}>🗺️ GALACTIC WORLDS</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           <ProgressGrid lessons={myLessons} progress={progress}/>
-        {WORLDS.filter(cw => cw.id === child.class_num || child.id === "admin-001").map(cw => (
+        {WORLDS.map(cw => (
             <button key={cw.id} onClick={() => onWorld(cw, true)} style={{
-              background: `linear-gradient(135deg,${cw.color}16,${cw.color}08)`,
+              background: (cw.id===child.class_num||child.is_premium)?`linear-gradient(135deg,${cw.color}16,${cw.color}08)`:C.card,
               border:`2px solid ${cw.color}44`, borderRadius:17, padding:"13px 15px",
               cursor:"pointer", display:"flex", alignItems:"center", gap:12,
               boxShadow:`0 0 16px ${cw.glow}`, transition:"all 0.2s",
@@ -5862,7 +5862,7 @@ function StudentActions({ student, teacher, onRefresh, onClose }) {
     if (!confirm(`Delete ${student.name}? This cannot be undone.`)) return;
     setLoading(true);
     const d = await api("delete_student",{student_id:student.id});
-    if (d.ok) { onRefresh(); onClose(); } else setMsg(d.error||"Failed");
+    if (d.ok) { onRefresh(); setTimeout(onClose,100); } else setMsg(d.error||"Failed");
     setLoading(false);
   };
 
@@ -5871,6 +5871,40 @@ function StudentActions({ student, teacher, onRefresh, onClose }) {
     const d = await api("get_student_progress",{student_id:student.id});
     setProg(d.data||[]); setView("progress"); setLoading(false);
   };
+
+  if (view==="modify") return (
+    <div style={{marginTop:10,padding:"10px",background:C.card2,borderRadius:10}}>
+      <div style={{color:C.dim,fontSize:11,marginBottom:8}}>Modify {student.name}</div>
+      {[["Name","name","text",student.name],["Roll No","roll_no","text",student.roll_no],["Username","username","text",student.username||""],["Section","section","text",student.section]].map(([l,k,t,ph])=>(
+        <div key={k} style={{marginBottom:8}}>
+          <div style={{color:C.dim,fontSize:10,marginBottom:3}}>{l}</div>
+          <input defaultValue={ph} id={`mod_${k}_${student.id}`} type={t} placeholder={ph}
+            style={{width:"100%",background:C.bg,border:`1.5px solid ${C.purple}44`,borderRadius:8,padding:"7px 10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:13,display:"block"}}/>
+        </div>
+      ))}
+      <div style={{marginBottom:8}}>
+        <div style={{color:C.dim,fontSize:10,marginBottom:3}}>Class</div>
+        <select id={`mod_class_${student.id}`} defaultValue={student.class_num}
+          style={{width:"100%",background:C.bg,border:`1.5px solid ${C.purple}44`,borderRadius:8,padding:"7px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:13}}>
+          {["Nursery","Jr KG","Sr KG","Class 1","Class 2","Class 3","Class 4","Class 5"].map((n,i)=><option key={i} value={i}>{n}</option>)}
+        </select>
+      </div>
+      {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:11,marginBottom:6}}>{msg}</div>}
+      <div style={{display:"flex",gap:8}}>
+        <Btn color={C.purple} loading={loading} onClick={async()=>{
+          setLoading(true);
+          const get = k => document.getElementById(`mod_${k}_${student.id}`)?.value||"";
+          const d = await api("modify_student",{student_id:student.id,
+            name:get("name"),roll_no:get("roll_no"),username:get("username"),
+            section:get("section"),class_num:document.getElementById(`mod_class_${student.id}`)?.value});
+          setMsg(d.ok?"✅ Updated!":d.error||"Failed");
+          if(d.ok){onRefresh();setTimeout(()=>{setView("menu");setMsg("");},1200);}
+          setLoading(false);
+        }}>SAVE</Btn>
+        <button onClick={()=>setView("menu")} style={{flex:1,background:"none",border:`1px solid ${C.dim}44`,borderRadius:10,padding:"10px",color:C.dim,cursor:"pointer",fontFamily:"'Nunito',sans-serif",fontWeight:700}}>CANCEL</button>
+      </div>
+    </div>
+  );
 
   if (view==="pin") return (
     <div style={{marginTop:10,padding:"10px",background:C.card2,borderRadius:10}}>
@@ -5905,6 +5939,7 @@ function StudentActions({ student, teacher, onRefresh, onClose }) {
     <div style={{marginTop:10,display:"flex",gap:8,flexWrap:"wrap"}}>
       <button onClick={loadProgress} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:8,padding:"6px 10px",color:C.cyan,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>📊 Progress</button>
       <button onClick={()=>setView("pin")} style={{background:`${C.yellow}22`,border:`1px solid ${C.yellow}44`,borderRadius:8,padding:"6px 10px",color:C.yellow,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>🔑 Change PIN</button>
+      <button onClick={()=>setView("modify")} style={{background:`${C.purple}22`,border:`1px solid ${C.purple}44`,borderRadius:8,padding:"6px 10px",color:C.purple,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>✏️ Modify</button>
       <button onClick={deleteStudent} style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",color:C.red,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>🗑 Delete</button>
     </div>
   );
@@ -6320,7 +6355,7 @@ function AdminPanel({ onBack }) {
     setAuthed(true); loadSchools();
   };
 
-  useEffect(() => { if (authed) loadSchools(); }, [authed]);
+  useEffect(() => { if (authed) loadSchools(); }, []); // load on mount
 
   const handleCreateSchool = async () => {
     setLoading(true); setMsg("");
