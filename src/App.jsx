@@ -453,17 +453,44 @@ function dbLog(level, msg, detail="") {
 // WORLDS — one per class
 // ─────────────────────────────────────────────────────────────────────────────
 const WORLDS = [
-  { id:1, name:"Class 1", world:"Orion Nebula",   planet:"🌍", color:"#22c55e", glow:"#22c55e44", free:true  },
-  { id:2, name:"Class 2", world:"Andromeda",      planet:"🪐", color:"#3b82f6", glow:"#3b82f644", free:true  },
-  { id:3, name:"Class 3", world:"Milky Way Core", planet:"⭐", color:"#a855f7", glow:"#a855f744", free:false },
-  { id:4, name:"Class 4", world:"Cygnus Rift",    planet:"🔴", color:"#f97316", glow:"#f9731644", free:false },
-  { id:5, name:"Class 5", world:"Event Horizon",  planet:"🌌", color:"#ec4899", glow:"#ec489944", free:false },
+  { id:10, name:"Nursery",  world:"Star Seeds",     planet:"🌱", color:"#84cc16", glow:"#84cc1644", free:false },
+  { id:11, name:"Jr KG",    world:"Moon Garden",    planet:"🌙", color:"#f472b6", glow:"#f472b644", free:false },
+  { id:12, name:"Sr KG",    world:"Sun Valley",     planet:"☀️", color:"#fb923c", glow:"#fb923c44", free:false },
+  { id:1,  name:"Class 1",  world:"Orion Nebula",   planet:"🌍", color:"#22c55e", glow:"#22c55e44", free:true  },
+  { id:2,  name:"Class 2",  world:"Andromeda",      planet:"🪐", color:"#3b82f6", glow:"#3b82f644", free:false },
+  { id:3,  name:"Class 3",  world:"Milky Way Core", planet:"⭐", color:"#a855f7", glow:"#a855f744", free:false },
+  { id:4,  name:"Class 4",  world:"Cygnus Rift",    planet:"🔴", color:"#f97316", glow:"#f9731644", free:false },
+  { id:5,  name:"Class 5",  world:"Event Horizon",  planet:"🌌", color:"#ec4899", glow:"#ec489944", free:false },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LESSONS — per class, references lesson IDs that match questions table
 // ─────────────────────────────────────────────────────────────────────────────
 const LESSONS = {
+  10: [ // Nursery
+    { id:"n-l1", title:"Counting 1–5",    emoji:"🔢", sets:20, xp:50 },
+    { id:"n-l2", title:"Shapes",          emoji:"🔷", sets:20, xp:50 },
+    { id:"n-l3", title:"Colors",          emoji:"🎨", sets:20, xp:50 },
+    { id:"n-l4", title:"Animals",         emoji:"🐾", sets:20, xp:50 },
+    { id:"n-l5", title:"Big & Small",     emoji:"📏", sets:20, xp:50 },
+    { id:"n-l6", title:"Simple Sums",     emoji:"➕", sets:20, xp:50 },
+  ],
+  11: [ // Jr KG
+    { id:"jk-l1", title:"Numbers 1–10",   emoji:"🔢", sets:20, xp:60 },
+    { id:"jk-l2", title:"2D Shapes",      emoji:"🔷", sets:20, xp:60 },
+    { id:"jk-l3", title:"Colors & Patterns",emoji:"🌈",sets:20, xp:60 },
+    { id:"jk-l4", title:"More & Less",    emoji:"⚖️", sets:20, xp:60 },
+    { id:"jk-l5", title:"Addition to 10", emoji:"➕", sets:20, xp:60 },
+    { id:"jk-l6", title:"Body Parts",     emoji:"🧍", sets:20, xp:60 },
+  ],
+  12: [ // Sr KG
+    { id:"sk-l1", title:"Numbers 1–20",   emoji:"🔢", sets:20, xp:70 },
+    { id:"sk-l2", title:"Addition to 5",  emoji:"➕", sets:20, xp:70 },
+    { id:"sk-l3", title:"Subtraction",    emoji:"➖", sets:20, xp:70 },
+    { id:"sk-l4", title:"3D Shapes",      emoji:"🔮", sets:20, xp:70 },
+    { id:"sk-l5", title:"Time & Day",     emoji:"⏰", sets:20, xp:70 },
+    { id:"sk-l6", title:"Money Basics",   emoji:"💰", sets:20, xp:70 },
+  ],
   1: [
     { id:"c1-l1", title:"Shapes & Space",           icon:"🔷", sets:20, xp:100 },
     { id:"c1-l2", title:"Numbers 1–9",              icon:"🔢", sets:20, xp:100 },
@@ -3242,7 +3269,7 @@ function ThemeSelector({ onClose }) {
   );
 }
 
-function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogout, onFeedback, onRate, onSettings }) {
+function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogout, onFeedback, onRate, onSettings, isLessonPurchased }) {
   const [showTutorial, setShowTutorial] = useState(()=>!localStorage.getItem('mm_tutorial_done'));
   const doneTutorial = () => { localStorage.setItem('mm_tutorial_done','1'); setShowTutorial(false); };
   const [showTheme, setShowTheme] = useState(false);
@@ -3462,7 +3489,7 @@ function LessonMap({ world, child, onBack, onLesson, isLessonPurchased, onPurcha
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:12, color: lessonUnlocked ? "white" : C.dim }}>
                       L{li+1}: {lesson.title}
-                      {world.id !== child.class_num && isLessonPurchased && !isLessonPurchased(world.id, lesson.id) && <span style={{fontSize:10,color:C.orange,marginLeft:6}}>💰 ₹49</span>}
+                      {world.id !== child.class_num && isLessonPurchased && !isLessonPurchased(world.id, lesson.id) && <span style={{fontSize:10,color:C.orange,marginLeft:6}}>💰 ₹300</span>}
                     </div>
                     <div style={{ display:"flex", gap:5, alignItems:"center" }}>
                       <span style={{ fontSize:9, color:C.dim, fontFamily:"'Orbitron',sans-serif" }}>{cSets}/20 sets</span>
@@ -6963,7 +6990,7 @@ export default function App() {
   if (screen === "welcome")  return <><GlobalStyles/><Welcome  onRegister={() => setScreen("register")} onLogin={() => setScreen("login")} onPrivacy={() => { setPrevScreen("welcome"); setScreen("privacy"); }}/></>;
   if (screen === "register") return <><GlobalStyles/><Register onBack={() => setScreen("student_entry")} onDone={({ user: u, child: c, requirePayment }) => { setUser(u); setChild(c); setWorld(WORLDS[(c?.class_num||1)-1]||WORLDS[0]); setScreen(requirePayment?"paywall":"home"); }}/></>;
   if (screen === "login")    return <><GlobalStyles/><Login    onBack={() => setScreen("student_entry")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
-  if (screen === "home")     return <><GlobalStyles/><Home     child={child} onWorld={goWorld} onAbacus={() => setScreen("abacus")} onGames={() => setScreen("games")} onOlympiad={() => setScreen("olympiad")} onParent={() => setScreen("parent")} onRate={() => setShowRating(true)} onLogout={logout} onFeedback={goFeedback} onSettings={()=>setScreen('settings')} onThemeChange={handleThemeChange}/><FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
+  if (screen === "home")     return <><GlobalStyles/><Home     child={child} isLessonPurchased={isLessonPurchased} onWorld={goWorld} onAbacus={() => setScreen("abacus")} onGames={() => setScreen("games")} onOlympiad={() => setScreen("olympiad")} onParent={() => setScreen("parent")} onRate={() => setShowRating(true)} onLogout={logout} onFeedback={goFeedback} onSettings={()=>setScreen('settings')} onThemeChange={handleThemeChange}/><FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
   if (screen === "paywall")  return <><GlobalStyles/><Paywall  world={world||WORLDS[(child?.class_num||1)-1]||WORLDS[0]} child={child} onBack={() => setScreen("home")} onUnlock={handleUnlock}/></>;
   if (screen === "lessons")  return <><GlobalStyles/><LessonMap world={world} child={child} onBack={() => setScreen("home")} isLessonPurchased={isLessonPurchased} onPurchaseLesson={purchaseLesson} onLesson={l => { setLesson(l); setScreen("game"); }}/></>;
   if (screen === "game")     return <><GlobalStyles/><Game     lesson={lesson} world={world} child={child} setChild={setChild} onBack={() => { db.track("lesson_exit",child?.id,null,{lesson_id:lesson?.id,set_index:lesson?.setIndex}); setScreen("lessons"); }} onDone={() => { db.track("lesson_complete",child?.id,null,{lesson_id:lesson?.id,set_index:lesson?.setIndex}); setScreen("lessons"); }} onNextSet={(si) => { db.track("set_advance",child?.id,null,{lesson_id:lesson?.id,set_index:si}); setLesson(l => ({...l, setIndex:si})); }}/>{ showSOS && <SOSButton onClick={() => goFeedback("bug")}/>}<FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
