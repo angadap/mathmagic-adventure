@@ -13,7 +13,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ];
 
-const VALID_PLANS = { monthly: 199, yearly: 999 };
+const VALID_PLANS = { monthly: 199, yearly: 999, reg: 599, lesson: 300 };
 const UUID_RE     = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isValidUUID = (s) => typeof s === "string" && UUID_RE.test(s);
 
@@ -125,6 +125,32 @@ export default async function handler(req, res) {
   if (limited) return res.status(429).json({ error: `Too many requests. Wait ${retryAfter}s.` });
 
   const token = req.headers.authorization?.replace("Bearer ", "").trim();
+  const { action: earlyAction } = req.body || {};
+  // Public actions — no auth required
+  if (earlyAction === "get_rzp_key") return res.status(200).json({ key: RZP_KEY_ID || "" });
+  if (earlyAction === "create_reg_order") {
+    try {
+      const order = await createRazorpayOrder(599, `mm_reg_${Date.now()}`);
+      return res.status(200).json({ order_id: order.id });
+    } catch(e) { return res.status(500).json({ error: e.message }); }
+  }
+  if (earlyAction === "verify_reg_payment") {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature)
+      return res.status(400).json({ error: "Missing payment details" });
+    if (!verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature))
+      return res.status(400).json({ error: "Payment verification failed." });
+    return res.status(200).json({ ok: true, reg_token: razorpay_payment_id });
+  }
+  if (earlyAction === "verify_reg_upi") {
+    const { utr } = req.body;
+    if (!utr || utr.length < 10) return res.status(400).json({ error: "Invalid UTR" });
+    if (!/^[A-Z0-9]{10,22}$/i.test(utr)) return res.status(400).json({ error: "Invalid UTR format." });
+    const dup = await sbQuery("children","GET",null,`?reg_payment_id=eq.${encodeURIComponent(utr)}&select=id`);
+    if (Array.isArray(dup.data) && dup.data.length > 0)
+      return res.status(400).json({ error: "UTR already used." });
+    return res.status(200).json({ ok: true, reg_token: utr });
+  }
   const user  = await verifyToken(token);
   if (!user?.id) return res.status(401).json({ error: "Unauthorized" });
 
@@ -176,6 +202,78 @@ export default async function handler(req, res) {
 
       await setPremium(child_id, plan, utr, "upi");
       return res.status(200).json({ ok: true });
+    }
+
+
+    // -- Create registration order (no auth needed — pre-signup)
+    if (action === "create_reg_order") {
+      const order = await createRazorpayOrder(599, `mm_reg_${Date.now()}`);
+      return res.status(200).json({ order_id: order.id, key: RZP_KEY_ID });
+    }
+
+    // -- Verify registration payment
+    if (action === "verify_reg_payment") {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature)
+        return res.status(400).json({ error: "Missing payment details" });
+      if (!verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature))
+        return res.status(400).json({ error: "Payment verification failed." });
+      // Store payment token in session for register flow
+      return res.status(200).json({ ok: true, reg_token: razorpay_payment_id });
+    }
+
+    // -- Verify registration UPI
+    if (action === "verify_reg_upi") {
+      const { utr } = req.body;
+      if (!utr || utr.length < 10) return res.status(400).json({ error: "Invalid UTR" });
+      if (!/^[A-Z0-9]{10,22}$/i.test(utr)) return res.status(400).json({ error: "Invalid UTR format." });
+      const dup = await sbQuery("children", "GET", null, `?reg_payment_id=eq.${encodeURIComponent(utr)}&select=id`);
+      if (Array.isArray(dup.data) && dup.data.length > 0)
+        return res.status(400).json({ error: "UTR already used." });
+      return res.status(200).json({ ok: true, reg_token: utr });
+    }
+
+    // -- Create lesson order (requires auth)
+    if (action === "create_lesson_order") {
+      const { lesson_id, child_id, amount } = req.body;
+      if (!lesson_id || !child_id) return res.status(400).json({ error: "Missing fields" });
+      if (amount !== 300) return res.status(400).json({ error: "Invalid amount" });
+      if (!(await childBelongsToUser(child_id, user.id)))
+        return res.status(403).json({ error: "Forbidden" });
+      const order = await createRazorpayOrder(300, `mm_lesson_${child_id.slice(0,8)}_${lesson_id}_${Date.now()}`);
+      return res.status(200).json({ order_id: order.id, key: RZP_KEY_ID });
+    }
+
+    // -- Verify lesson payment
+    if (action === "verify_lesson_payment") {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, lesson_id, child_id } = req.body;
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !lesson_id)
+        return res.status(400).json({ error: "Missing fields" });
+      if (!(await childBelongsToUser(child_id, user.id)))
+        return res.status(403).json({ error: "Forbidden" });
+      if (!verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature))
+        return res.status(400).json({ error: "Payment verification failed." });
+      await sbQuery("lesson_purchases", "POST", { child_id, lesson_id, txn_id: razorpay_payment_id, gateway: "razorpay", purchased_at: new Date().toISOString() });
+      return res.status(200).json({ ok: true });
+    }
+
+    // -- Verify lesson UPI
+    if (action === "verify_lesson_upi") {
+      const { utr, lesson_id, child_id, amount } = req.body;
+      if (!utr || utr.length < 10 || !lesson_id) return res.status(400).json({ error: "Missing fields" });
+      if (amount !== 300) return res.status(400).json({ error: "Invalid amount" });
+      if (!(await childBelongsToUser(child_id, user.id))) return res.status(403).json({ error: "Forbidden" });
+      if (!/^[A-Z0-9]{10,22}$/i.test(utr)) return res.status(400).json({ error: "Invalid UTR format." });
+      const dup = await sbQuery("lesson_purchases", "GET", null, `?txn_id=eq.${encodeURIComponent(utr)}&select=id`);
+      if (Array.isArray(dup.data) && dup.data.length > 0)
+        return res.status(400).json({ error: "UTR already used." });
+      await sbQuery("lesson_purchases", "POST", { child_id, lesson_id, txn_id: utr, gateway: "upi", purchased_at: new Date().toISOString() });
+      return res.status(200).json({ ok: true });
+    }
+
+    // Public: return Razorpay key ID (no auth needed)
+    if (action === "get_rzp_key") {
+      return res.status(200).json({ key: RZP_KEY_ID || "" });
     }
 
     return res.status(400).json({ error: "Unknown action" });

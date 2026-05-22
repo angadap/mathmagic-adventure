@@ -3166,6 +3166,226 @@ function Login({ onBack, onDone }) {
 }
 
 // ── Paywall ───────────────────────────────────────────────────────────
+// -- Razorpay loader helper
+function loadRazorpayScript() {
+  return new Promise(resolve => {
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload  = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+}
+
+async function openRazorpay({ keyId, orderId, amount, description, prefillName, onSuccess, onFail }) {
+  const loaded = await loadRazorpayScript();
+  if (!loaded) { onFail("Could not load payment gateway. Check internet."); return; }
+  const rzp = new window.Razorpay({
+    key: keyId,
+    order_id: orderId,
+    amount: amount * 100,
+    currency: "INR",
+    name: "MathMagic Space Academy",
+    description,
+    prefill: { name: prefillName || "" },
+    theme: { color: "#7c3aed" },
+    handler: onSuccess,
+    modal: { ondismiss: () => onFail("Payment cancelled.") },
+  });
+  rzp.open();
+}
+
+// -- RegPayment: Rs599 one-time registration payment
+function RegPayment({ onBack, onPaid }) {
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState("");
+  const [utr,     setUtr]     = useState("");
+  const [tab,     setTab]     = useState("razorpay");
+
+  const handleRazorpay = async () => {
+    setLoading(true); setMsg("");
+    try {
+      const r = await fetch("/api/payment", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({action:"create_reg_order", amount:599}),
+      });
+      const d = await r.json();
+      if (!d.order_id) { setMsg(d.error||"Could not create order."); setLoading(false); return; }
+      setLoading(false);
+      openRazorpay({
+        keyId: window.__RZP_KEY__||"",
+        orderId: d.order_id,
+        amount: 599,
+        description: "MathMagic Registration Fee",
+        prefillName: "",
+        onSuccess: async (resp) => {
+          setLoading(true);
+          const v = await fetch("/api/payment", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({action:"verify_reg_payment", razorpay_order_id:resp.razorpay_order_id, razorpay_payment_id:resp.razorpay_payment_id, razorpay_signature:resp.razorpay_signature}),
+          });
+          const vd = await v.json();
+          setLoading(false);
+          if (vd.ok) { setMsg("\u2705 Payment successful! Setting up your account..."); setTimeout(onPaid, 1200); }
+          else setMsg(vd.error||"Verification failed. Contact support.");
+        },
+        onFail: (e) => { setLoading(false); setMsg(e); },
+      });
+    } catch(e) { setLoading(false); setMsg("Network error. Try again."); }
+  };
+
+  const handleUPI = async () => {
+    if (utr.trim().length < 10) { setMsg("Enter valid UTR (10+ chars)."); return; }
+    setLoading(true); setMsg("");
+    const r = await fetch("/api/payment", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"verify_reg_upi", utr:utr.trim()}),
+    });
+    const d = await r.json();
+    setLoading(false);
+    if (d.ok) { setMsg("\u2705 Payment verified! Setting up your account..."); setTimeout(onPaid, 1200); }
+    else setMsg(d.error||"Verification failed.");
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <div style={{width:"100%",maxWidth:420}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
+          <BackBtn onClick={onBack} color={C.green}/>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.green}}>REGISTRATION FEE</div>
+        </div>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:48}}>{"\u{1F680}"}</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:28,color:"white",marginTop:8}}>{"\u20B9"}599</div>
+          <div style={{color:C.dim,fontSize:13,marginTop:4}}>One-time {"\u00B7"} Lifetime access to your class</div>
+        </div>
+        <Card color={C.green} style={{marginBottom:14}}>
+          {[["🎯","Full access to your class lessons"],["🎮","All game modes & Abacus"],["📊","Parent dashboard"],["🚫","No ads ever"]].map(([e,t],i)=>(
+            <div key={i} style={{display:"flex",gap:10,marginBottom:6,alignItems:"center"}}>
+              <span style={{fontSize:16}}>{e}</span><span style={{color:"#ccc",fontSize:13}}>{t}</span>
+            </div>
+          ))}
+        </Card>
+        <div style={{display:"flex",gap:0,marginBottom:16,background:C.card,borderRadius:12,padding:3}}>
+          {[["razorpay","\ud83d\udcb3 Card/UPI"],["upi","\ud83c\udfe6 UPI Manual"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setTab(k)} style={{flex:1,background:tab===k?C.green:"none",border:"none",borderRadius:10,padding:"8px",color:tab===k?"black":C.dim,fontWeight:800,fontSize:12,cursor:"pointer"}}>{l}</button>
+          ))}
+        </div>
+        {tab==="razorpay" ? (
+          <Btn color={C.green} loading={loading} onClick={handleRazorpay}>{"\u{1F680}"} PAY {"\u20B9"}599 {"\u2014"} REGISTER NOW</Btn>
+        ) : (
+          <div>
+            <div style={{color:C.dim,fontSize:12,marginBottom:6}}>UPI ID: <b style={{color:C.green}}>mathmagic@upi</b> {"\u00B7"} Amount: <b style={{color:"white"}}>{"\u20B9"}599</b></div>
+            <div style={{color:C.dim,fontSize:11,marginBottom:8}}>After paying, enter UTR / transaction ref number:</div>
+            <input value={utr} onChange={e=>setUtr(e.target.value.toUpperCase())} placeholder="UTR / Ref number"
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.green}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block",marginBottom:10}}/>
+            <Btn color={C.green} loading={loading} onClick={handleUPI}>{"\u2705"} VERIFY {"\u0026"} REGISTER</Btn>
+          </div>
+        )}
+        {msg && <div style={{marginTop:12,color:msg.startsWith("\u2705")?C.green:C.red,fontSize:12,textAlign:"center",fontWeight:700}}>{msg}</div>}
+        <div style={{marginTop:12,textAlign:"center",color:C.dim,fontSize:11}}>{"\ud83d\udd12"} Secured by Razorpay {"\u00B7"} 256-bit SSL</div>
+      </div>
+    </div>
+  );
+}
+
+// -- LessonPayment: Rs300 per cross-class lesson
+function LessonPayment({ lessonToBuy, child, user, onBack, onPaid }) {
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState("");
+  const [utr,     setUtr]     = useState("");
+  const [tab,     setTab]     = useState("razorpay");
+  if (!lessonToBuy) return null;
+  const { lessonId, price=300 } = lessonToBuy;
+  const authH = () => ({ "Content-Type":"application/json", Authorization:`Bearer ${user?.access_token||""}` });
+
+  const handleRazorpay = async () => {
+    setLoading(true); setMsg("");
+    try {
+      const r = await fetch("/api/payment", {
+        method:"POST", headers:authH(),
+        body:JSON.stringify({action:"create_lesson_order", lesson_id:lessonId, child_id:child?.id, amount:price}),
+      });
+      const d = await r.json();
+      if (!d.order_id) { setMsg(d.error||"Could not create order."); setLoading(false); return; }
+      setLoading(false);
+      openRazorpay({
+        keyId: window.__RZP_KEY__||"",
+        orderId: d.order_id,
+        amount: price,
+        description: `Unlock lesson ${lessonId}`,
+        prefillName: child?.name||"",
+        onSuccess: async (resp) => {
+          setLoading(true);
+          const v = await fetch("/api/payment", {
+            method:"POST", headers:authH(),
+            body:JSON.stringify({action:"verify_lesson_payment", razorpay_order_id:resp.razorpay_order_id, razorpay_payment_id:resp.razorpay_payment_id, razorpay_signature:resp.razorpay_signature, lesson_id:lessonId, child_id:child?.id}),
+          });
+          const vd = await v.json();
+          setLoading(false);
+          if (vd.ok) { setMsg("\u2705 Lesson unlocked!"); setTimeout(()=>onPaid(lessonId), 1000); }
+          else setMsg(vd.error||"Verification failed.");
+        },
+        onFail: (e) => { setLoading(false); setMsg(e); },
+      });
+    } catch(e) { setLoading(false); setMsg("Network error."); }
+  };
+
+  const handleUPI = async () => {
+    if (utr.trim().length < 10) { setMsg("Enter valid UTR."); return; }
+    setLoading(true); setMsg("");
+    const r = await fetch("/api/payment", {
+      method:"POST", headers:authH(),
+      body:JSON.stringify({action:"verify_lesson_upi", utr:utr.trim(), lesson_id:lessonId, child_id:child?.id, amount:price}),
+    });
+    const d = await r.json();
+    setLoading(false);
+    if (d.ok) { setMsg("\u2705 Lesson unlocked!"); setTimeout(()=>onPaid(lessonId), 1000); }
+    else setMsg(d.error||"Verification failed.");
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px",display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <div style={{width:"100%",maxWidth:420}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
+          <BackBtn onClick={onBack} color={C.orange}/>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.orange}}>UNLOCK LESSON</div>
+        </div>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:48}}>{"\ud83d\udd13"}</div>
+          <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:28,color:"white",marginTop:8}}>{"\u20B9"}{price}</div>
+          <div style={{color:C.dim,fontSize:13,marginTop:4}}>Permanent unlock {"\u00B7"} Lesson {lessonId}</div>
+        </div>
+        <Card color={C.orange} style={{marginBottom:14}}>
+          {[["📚","All sets in this lesson unlocked"],["♾️","Permanent — never expires"],["🎮","All game modes for this lesson"]].map(([e,t],i)=>(
+            <div key={i} style={{display:"flex",gap:10,marginBottom:6,alignItems:"center"}}>
+              <span style={{fontSize:16}}>{e}</span><span style={{color:"#ccc",fontSize:13}}>{t}</span>
+            </div>
+          ))}
+        </Card>
+        <div style={{display:"flex",gap:0,marginBottom:16,background:C.card,borderRadius:12,padding:3}}>
+          {[["razorpay","\ud83d\udcb3 Card/UPI"],["upi","\ud83c\udfe6 UPI Manual"]].map(([k,l])=>(
+            <button key={k} onClick={()=>setTab(k)} style={{flex:1,background:tab===k?C.orange:"none",border:"none",borderRadius:10,padding:"8px",color:tab===k?"black":C.dim,fontWeight:800,fontSize:12,cursor:"pointer"}}>{l}</button>
+          ))}
+        </div>
+        {tab==="razorpay" ? (
+          <Btn color={C.orange} loading={loading} onClick={handleRazorpay}>{"\ud83d\udd13"} UNLOCK FOR {"\u20B9"}{price}</Btn>
+        ) : (
+          <div>
+            <div style={{color:C.dim,fontSize:12,marginBottom:6}}>UPI ID: <b style={{color:C.orange}}>mathmagic@upi</b> {"\u00B7"} Amount: <b style={{color:"white"}}>{"\u20B9"}{price}</b></div>
+            <input value={utr} onChange={e=>setUtr(e.target.value.toUpperCase())} placeholder="UTR / Ref number"
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.orange}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block",marginBottom:10}}/>
+            <Btn color={C.orange} loading={loading} onClick={handleUPI}>{"\u2705"} VERIFY {"\u0026"} UNLOCK</Btn>
+          </div>
+        )}
+        {msg && <div style={{marginTop:12,color:msg.startsWith("\u2705")?C.green:C.red,fontSize:12,textAlign:"center",fontWeight:700}}>{msg}</div>}
+        <div style={{marginTop:12,textAlign:"center",color:C.dim,fontSize:11}}>{"\ud83d\udd12"} Secured by Razorpay {"\u00B7"} 256-bit SSL</div>
+      </div>
+    </div>
+  );
+}
+
 function Paywall({ world, child, onBack, onUnlock }) {
   const [plan,    setPlan]    = useState("yearly");
   const [loading, setLoading] = useState(false);
@@ -5728,11 +5948,11 @@ function StudentEntry({ onBack, onSelect }) {
             </div>
             <span style={{color:C.purple,fontSize:20}}>›</span>
           </button>
-          <button onClick={()=>{SFX.tap();onSelect("register");}} style={{background:`${C.green}18`,border:`2px solid ${C.green}55`,borderRadius:16,padding:"18px",cursor:"pointer",textAlign:"left",display:"flex",gap:14,alignItems:"center"}}>
+          <button onClick={()=>{SFX.tap();onSelect("reg_payment");}} style={{background:`${C.green}18`,border:`2px solid ${C.green}55`,borderRadius:16,padding:"18px",cursor:"pointer",textAlign:"left",display:"flex",gap:14,alignItems:"center"}}>
             <span style={{fontSize:28}}>✨</span>
             <div style={{flex:1}}>
               <div style={{fontWeight:800,fontSize:15,color:C.green}}>New? Register here</div>
-              <div style={{fontSize:12,color:C.dim,marginTop:2}}>Create a free account in 2 minutes</div>
+              <div style={{fontSize:12,color:C.dim,marginTop:2}}>One-time ₹599 · Lifetime access to your class</div>
             </div>
             <span style={{color:C.green,fontSize:20}}>›</span>
           </button>
@@ -6992,8 +7212,13 @@ export default function App() {
   const [themeKey,setThemeKey]=useState(localStorage.getItem('mm_theme')||'royal');
   const [schoolStudent, setSchoolStudent] = useState(null);
   const [purchasedLessons, setPurchasedLessons] = useState(()=>{ try{return JSON.parse(localStorage.getItem('mm_purchased')||'[]')}catch{return []} });
+  const [lessonToBuy,      setLessonToBuy]      = useState(null);
   const [teacher,       setTeacher]       = useState(null);
   const handleThemeChange=(key)=>{C=THEMES[key]||THEMES.royal;setThemeKey(key);};
+  useEffect(() => {
+    fetch("/api/payment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"get_rzp_key"})})
+      .then(r=>r.json()).then(d=>{if(d.key)window.__RZP_KEY__=d.key;}).catch(()=>{});
+  }, []);
   const [screen,         setScreen]         = useState("splash");
   const [user,           setUser]           = useState(null);
   const [child,          setChild]          = useState(null);
@@ -7044,8 +7269,11 @@ export default function App() {
     if (child?.is_premium) return true; // full premium
     return purchasedLessons.includes(lessonId);
   };
-  const purchaseLesson = (lessonId, worldId, price=49) => {
-    // Store purchase locally + in DB
+  const purchaseLesson = async (lessonId, worldId, price=300) => {
+    setLessonToBuy({lessonId, worldId, price});
+    setScreen("lesson_payment");
+  };
+  const confirmLessonPurchased = (lessonId) => {
     const updated = [...purchasedLessons, lessonId];
     setPurchasedLessons(updated);
     localStorage.setItem('mm_purchased', JSON.stringify(updated));
@@ -7065,10 +7293,12 @@ export default function App() {
   if (screen === "entry")         return <><GlobalStyles/><EntryScreen onSelect={(s)=>setScreen(s)}/></>;
   if (screen === "student_entry") return <><GlobalStyles/><StudentEntry onBack={()=>setScreen("entry")} onSelect={(s)=>setScreen(s)}/></>;
   if (screen === "welcome")  return <><GlobalStyles/><Welcome  onRegister={() => setScreen("register")} onLogin={() => setScreen("login")} onPrivacy={() => { setPrevScreen("welcome"); setScreen("privacy"); }}/></>;
+  if (screen === "reg_payment") return <><GlobalStyles/><RegPayment onBack={()=>setScreen("student_entry")} onPaid={()=>setScreen("register")}/></>;
   if (screen === "register") return <><GlobalStyles/><Register onBack={() => setScreen("student_entry")} onDone={({ user: u, child: c, requirePayment }) => { setUser(u); setChild(c); setWorld(WORLDS[(c?.class_num||1)-1]||WORLDS[0]); setScreen(requirePayment?"paywall":"home"); }}/></>;
   if (screen === "login")    return <><GlobalStyles/><Login    onBack={() => setScreen("student_entry")} onDone={({ user: u, child: c }) => { setUser(u); setChild(c); setScreen("home"); }}/></>;
   if (screen === "home")     return <><GlobalStyles/><Home     child={child} isLessonPurchased={isLessonPurchased} onWorld={goWorld} onAbacus={() => setScreen("abacus")} onGames={() => setScreen("games")} onOlympiad={() => setScreen("olympiad")} onParent={() => setScreen("parent")} onRate={() => setShowRating(true)} onLogout={logout} onFeedback={goFeedback} onSettings={()=>setScreen('settings')} onThemeChange={handleThemeChange}/><FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
   if (screen === "paywall")  return <><GlobalStyles/><Paywall  world={world||WORLDS[(child?.class_num||1)-1]||WORLDS[0]} child={child} onBack={() => setScreen("home")} onUnlock={handleUnlock}/></>;
+  if (screen === "lesson_payment") return <><GlobalStyles/><LessonPayment lessonToBuy={lessonToBuy} child={child} user={user} onBack={()=>setScreen("lessons")} onPaid={(lid)=>{ confirmLessonPurchased(lid); setScreen("lessons"); }}/></>;
   if (screen === "lessons")  return <><GlobalStyles/><LessonMap world={world} child={child} onBack={() => setScreen("home")} isLessonPurchased={isLessonPurchased} onPurchaseLesson={purchaseLesson} onLesson={l => { setLesson(l); setScreen("game"); }}/></>;
   if (screen === "game")     return <><GlobalStyles/><Game     lesson={lesson} world={world} child={child} setChild={setChild} onBack={() => { db.track("lesson_exit",child?.id,null,{lesson_id:lesson?.id,set_index:lesson?.setIndex}); setScreen("lessons"); }} onDone={() => { db.track("lesson_complete",child?.id,null,{lesson_id:lesson?.id,set_index:lesson?.setIndex}); setScreen("lessons"); }} onNextSet={(si) => { db.track("set_advance",child?.id,null,{lesson_id:lesson?.id,set_index:si}); setLesson(l => ({...l, setIndex:si})); }}/>{ showSOS && <SOSButton onClick={() => goFeedback("bug")}/>}<FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
   if (screen === "abacus")   return <><GlobalStyles/><Abacus   onBack={() => setScreen("home")} child={child}/>{ showSOS && <SOSButton onClick={() => goFeedback("bug")}/>}<FreezeDetector currentScreen={screen} child={child} onReport={goFeedback}/></>;
