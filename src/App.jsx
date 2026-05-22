@@ -3398,23 +3398,26 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
         <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:11, color:C.purple, letterSpacing:2, marginBottom:10 }}>🗺️ GALACTIC WORLDS</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           <ProgressGrid lessons={myLessons} progress={progress}/>
-        {WORLDS.map(cw => (
-            <button key={cw.id} onClick={() => onWorld(cw, true)} style={{
-              background: (cw.id===child.class_num||child.is_premium)?`linear-gradient(135deg,${cw.color}16,${cw.color}08)`:C.card,
-              border:`2px solid ${cw.color}44`, borderRadius:17, padding:"13px 15px",
+        {WORLDS.map(cw => {
+          const isMyClass = cw.id === (child.class_num||1) || child.is_premium;
+          return (
+            <button key={cw.id} onClick={() => onWorld(cw)} style={{
+              background: isMyClass ? `linear-gradient(135deg,${cw.color}16,${cw.color}08)` : "rgba(10,10,28,0.7)",
+              border:`2px solid ${isMyClass ? cw.color+"44" : "#222240"}`, borderRadius:17, padding:"13px 15px",
               cursor:"pointer", display:"flex", alignItems:"center", gap:12,
-              boxShadow:`0 0 16px ${cw.glow}`, transition:"all 0.2s",
+              boxShadow: isMyClass ? `0 0 16px ${cw.glow}` : "none", transition:"all 0.2s", opacity: isMyClass ? 1 : 0.55,
             }}>
               <div style={{ width:48, height:48, borderRadius:13, background:`${cw.color}18`, border:`2px solid ${cw.color}33`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>
-                {cw.planet}
+                {isMyClass ? cw.planet : "🔒"}
               </div>
               <div style={{ flex:1, textAlign:"left" }}>
-                <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:13, color:cw.color }}>{cw.name}</div>
-                <div style={{ fontSize:11, color:C.dim, marginTop:2, fontSize:12 }}>{cw.world} · 🎯 Your class</div>
+                <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:13, color: isMyClass ? cw.color : C.dim }}>{cw.name}</div>
+                <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{isMyClass ? `${cw.world} · 🎯 Your class` : "Buy lessons · ₹300 each"}</div>
               </div>
-              <div style={{ color:cw.color, fontSize:22 }}>›</div>
+              <div style={{ color: isMyClass ? cw.color : C.dim, fontSize:22 }}>{isMyClass ? "›" : "💰"}</div>
             </button>
-          ))}
+          );
+        })}
         </div>
       </div>
       {/* Bottom nav */}
@@ -3476,7 +3479,9 @@ function LessonMap({ world, child, onBack, onLesson, isLessonPurchased, onPurcha
           const done   = lessonDone(lesson.id);
           const cSets  = completedSets(lesson.id);
           const isExp  = expanded === lesson.id;
-          const lessonUnlocked = true; // All lessons open at Set 1
+          const isOwnClass = world.id === (child.class_num||1) || child.is_premium;
+          const purchased = isOwnClass || (isLessonPurchased && isLessonPurchased(world.id, lesson.id));
+          const lessonUnlocked = purchased;
           return (
             <div key={lesson.id} style={{ marginBottom:10 }}>
               {/* Lesson header row */}
@@ -3484,7 +3489,7 @@ function LessonMap({ world, child, onBack, onLesson, isLessonPurchased, onPurcha
                 <div style={{ width:48, height:48, borderRadius:14, background: done ? `linear-gradient(135deg,${world.color},${world.color}aa)` : lessonUnlocked ? C.card2 : C.card2, border:`2px solid ${done ? world.color : lessonUnlocked ? world.color+"44" : C.dim+"33"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>
                   {done ? "✅" : lessonUnlocked ? lesson.emoji : "🔒"}
                 </div>
-                <button onClick={() => lessonUnlocked && setExpanded(isExp ? null : lesson.id)}
+                <button onClick={() => lessonUnlocked ? setExpanded(isExp ? null : lesson.id) : (onPurchaseLesson && onPurchaseLesson(lesson.id, world.id, 300))}
                   style={{ flex:1, background: done ? `${world.color}0e` : lessonUnlocked ? C.card : C.card2, border:`1.5px solid ${done ? world.color+"44" : lessonUnlocked ? world.color+"1a" : C.dim+"33"}`, borderRadius:13, padding:"10px 13px", cursor: lessonUnlocked ? "pointer" : "not-allowed", textAlign:"left" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:12, color: lessonUnlocked ? "white" : C.dim }}>
@@ -3497,6 +3502,11 @@ function LessonMap({ world, child, onBack, onLesson, isLessonPurchased, onPurcha
                     </div>
                   </div>
                   <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{lesson.sub}</div>
+                  {!lessonUnlocked && (
+                    <div style={{ marginTop:6, background:`${C.orange}22`, borderRadius:8, padding:"5px 8px", fontSize:11, color:C.orange, fontWeight:700 }}>
+                      💰 Unlock this lesson for ₹300 — Tap to buy
+                    </div>
+                  )}
                   {lessonUnlocked && (
                     <div style={{ marginTop:5, background:"rgba(255,255,255,0.05)", borderRadius:5, height:4, overflow:"hidden" }}>
                       <div style={{ width:`${cSets*5}%`, height:"100%", background:`linear-gradient(90deg,${world.color},${C.cyan})`, borderRadius:5 }}/>
@@ -6488,13 +6498,14 @@ function AdminPanel({ onBack }) {
       <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
         {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
         {teachers.map(t=>(
-          <button key={t.id} onClick={()=>loadStudents(t)} style={{width:"100%",background:C.card,border:`1px solid ${C.purple}33`,borderRadius:14,padding:"14px 16px",cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,textAlign:"left"}}>
-            <div>
+          <div key={t.id} style={{background:C.card,border:`1px solid ${C.purple}33`,borderRadius:14,padding:"12px 14px",marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+            <button onClick={()=>loadStudents(t)} style={{flex:1,background:"none",border:"none",cursor:"pointer",textAlign:"left",padding:0}}>
               <div style={{fontWeight:800,color:"white",fontSize:14}}>{t.name}</div>
               <div style={{color:C.dim,fontSize:12}}>{t.email}</div>
-            </div>
-            <span style={{color:C.cyan,fontSize:20}}>›</span>
-          </button>
+            </button>
+            <button onClick={()=>{setView("edit_teacher");setSelTeacher(t);setForm({name:t.name,email:t.email});}} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:8,padding:"5px 9px",color:C.cyan,cursor:"pointer",fontSize:11}}>✏️</button>
+            <button onClick={async()=>{if(!window.confirm("Delete "+t.name+"?"))return;setLoading(true);const d=await api("admin_delete_teacher",{teacher_id:t.id});setMsg(d.data?"Deleted":d.error||"Failed");loadTeachers(selSchool);setLoading(false);}} style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"5px 9px",color:C.red,cursor:"pointer",fontSize:11}}>🗑️</button>
+          </div>
         ))}
         {!loading&&teachers.length===0&&<div style={{textAlign:"center",color:C.dim,padding:30}}>No teachers yet.</div>}
       </div>
@@ -6575,7 +6586,7 @@ function AdminPanel({ onBack }) {
       <div style={{padding:"16px 18px",maxWidth:600,margin:"0 auto"}}>
         {loading&&<div style={{textAlign:"center",color:C.dim,padding:20}}>Loading...</div>}
         {students.map(s=>(
-          <div key={s.id} style={{background:C.card,border:`1px solid ${C.purple}22`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:12}}>
+          <div key={s.id} style={{background:C.card,border:`1px solid ${C.purple}22`,borderRadius:14,padding:"12px 14px",marginBottom:8,display:"flex",alignItems:"center",gap:10}}>
             <div style={{background:`${C.purple}33`,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Orbitron',sans-serif",fontSize:11,color:C.purple,flexShrink:0}}>
               {String(s.roll_no).padStart(2,"0")}
             </div>
@@ -6583,14 +6594,80 @@ function AdminPanel({ onBack }) {
               <div style={{fontWeight:800,fontSize:14,color:"white"}}>{s.name}</div>
               <div style={{fontSize:11,color:C.dim}}>Class {s.class_num}-{s.section} · Lv {s.level||1} · {s.xp||0} XP</div>
             </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:10,color:C.dim}}>{s.last_active?new Date(s.last_active).toLocaleDateString("en-IN"):"Never"}</div>
-              <div style={{fontSize:10,color:s.streak_days>0?C.orange:C.dim}}>🔥{s.streak_days||0}</div>
-            </div>
+            <button onClick={()=>{setView("edit_student");setForm({student_id:s.id,name:s.name,roll_no:s.roll_no,class_num:s.class_num,section:s.section});}} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:8,padding:"5px 9px",color:C.cyan,cursor:"pointer",fontSize:11}}>✏️</button>
+            <button onClick={async()=>{if(!window.confirm("Delete "+s.name+"?"))return;setLoading(true);const d=await api("admin_delete_student",{student_id:s.id});setMsg(d.data?"Deleted":d.error||"Failed");loadStudents(selTeacher);setLoading(false);}} style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"5px 9px",color:C.red,cursor:"pointer",fontSize:11}}>🗑️</button>
           </div>
         ))}
         {!loading&&students.length===0&&<div style={{textAlign:"center",color:C.dim,padding:30}}>No students under this teacher.</div>}
       </div>
+    </div>
+  );
+
+  // ── Edit Teacher ──
+  if (view==="edit_teacher") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setView("school_detail")} color={C.cyan}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.cyan}}>EDIT TEACHER</div>
+      </div>
+      <Card color={C.cyan} style={{maxWidth:480,margin:"0 auto"}}>
+        {[["Name","name","text","Teacher name"],["Email","email","email","teacher@school.com"]].map(([l,k,t,ph])=>(
+          <div key={k}>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+            <input value={form[k]||""} onChange={e=>setForm({...form,[k]:e.target.value})} type={t} placeholder={ph}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.cyan}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block",marginBottom:10}}/>
+          </div>
+        ))}
+        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:10}}>{msg}</div>}
+        <Btn color={C.cyan} loading={loading} onClick={async()=>{
+          setLoading(true);setMsg("");
+          const d=await api("admin_modify_teacher",{teacher_id:selTeacher?.id,...form});
+          if(d.data){setMsg("✅ Saved!");loadTeachers(selSchool);}else setMsg(d.error||"Failed");
+          setLoading(false);
+        }}>SAVE CHANGES</Btn>
+      </Card>
+    </div>
+  );
+
+  // ── Edit Student ──
+  if (view==="edit_student") return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Nunito',sans-serif",padding:"20px 18px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+        <BackBtn onClick={()=>setView("teacher_detail")} color={C.purple}/>
+        <div style={{fontFamily:"'Orbitron',sans-serif",fontSize:13,color:C.purple}}>EDIT STUDENT</div>
+      </div>
+      <Card color={C.purple} style={{maxWidth:480,margin:"0 auto"}}>
+        {[["Name","name","text","Full name"],["Roll No","roll_no","text","01"],["New PIN (leave blank to keep)","pin","password",""]].map(([l,k,t,ph])=>(
+          <div key={k}>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>{l}</div>
+            <input value={form[k]||""} onChange={e=>setForm({...form,[k]:e.target.value})} type={t} placeholder={ph}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.purple}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block",marginBottom:10}}/>
+          </div>
+        ))}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+          <div>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>CLASS</div>
+            <select value={form.class_num||1} onChange={e=>setForm({...form,class_num:parseInt(e.target.value)})}
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.purple}44`,borderRadius:10,padding:"10px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14}}>
+              {["Nursery","Jr KG","Sr KG","Class 1","Class 2","Class 3","Class 4","Class 5"].map((n,i)=><option key={i} value={i}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{color:C.dim,fontSize:11,marginBottom:4}}>SECTION</div>
+            <input value={form.section||"A"} onChange={e=>setForm({...form,section:e.target.value.toUpperCase().slice(0,3)})} placeholder="A"
+              style={{width:"100%",background:C.card2,border:`1.5px solid ${C.purple}44`,borderRadius:10,padding:"10px 12px",color:"white",fontFamily:"'Nunito',sans-serif",fontSize:14,display:"block"}}/>
+          </div>
+        </div>
+        {msg&&<div style={{color:msg.startsWith("✅")?C.green:C.red,fontSize:12,marginBottom:8}}>{msg}</div>}
+        <Btn color={C.purple} loading={loading} onClick={async()=>{
+          setLoading(true);setMsg("");
+          const payload={student_id:form.student_id,name:form.name,roll_no:form.roll_no,class_num:form.class_num,section:form.section};
+          if(form.pin)payload.pin=form.pin;
+          const d=await api("admin_modify_student",payload);
+          if(d.data){setMsg("✅ Saved!");loadStudents(selTeacher);}else setMsg(d.error||"Failed");
+          setLoading(false);
+        }}>SAVE CHANGES</Btn>
+      </Card>
     </div>
   );
 

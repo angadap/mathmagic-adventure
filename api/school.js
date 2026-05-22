@@ -143,6 +143,45 @@ export default async function handler(req, res) {
       if (!r.ok) return res.status(400).json({error:"Duplicate roll number"});
       return res.status(200).json({data:Array.isArray(r.data)?r.data[0]:r.data});
     }
+      if (action==="admin_modify_teacher") {
+      const {teacher_id, name, email} = req.body;
+      if (!teacher_id) return res.status(400).json({error:"Missing teacher_id"});
+      const update = {};
+      if (name)  update.name  = clean(name,100);
+      if (email) update.email = clean(email,100).toLowerCase();
+      const r = await sb("teachers","PATCH",update,`?id=eq.${teacher_id}`);
+      if (!r.ok) return res.status(400).json({error:"Update failed"});
+      return res.status(200).json({data:true});
+    }
+      if (action==="admin_delete_teacher") {
+      const {teacher_id} = req.body;
+      if (!teacher_id) return res.status(400).json({error:"Missing teacher_id"});
+      await sb("students","PATCH",{teacher_id:null},`?teacher_id=eq.${teacher_id}`);
+      const r = await sb("teachers","DELETE",null,`?id=eq.${teacher_id}`);
+      if (!r.ok) return res.status(400).json({error:"Delete failed"});
+      return res.status(200).json({data:true});
+    }
+      if (action==="admin_modify_student") {
+      const {student_id, name, roll_no, class_num, section, pin} = req.body;
+      if (!student_id) return res.status(400).json({error:"Missing student_id"});
+      const update = {};
+      if (name)      update.name      = clean(name,50);
+      if (roll_no)   update.roll_no   = clean(String(roll_no),10);
+      if (class_num !== undefined) update.class_num = cleanInt(class_num,0,12);
+      if (section)   update.section   = clean(String(section),5).toUpperCase();
+      if (pin) { update.pin_hash = await hashPin(String(pin).slice(0,6)); }
+      const r = await sb("students","PATCH",update,`?id=eq.${student_id}`);
+      if (!r.ok) return res.status(400).json({error:"Update failed"});
+      return res.status(200).json({data:true});
+    }
+      if (action==="admin_delete_student") {
+      const {student_id} = req.body;
+      if (!student_id) return res.status(400).json({error:"Missing student_id"});
+      await sb("student_progress","DELETE",null,`?student_id=eq.${student_id}`);
+      const r = await sb("students","DELETE",null,`?id=eq.${student_id}`);
+      if (!r.ok) return res.status(400).json({error:"Delete failed"});
+      return res.status(200).json({data:true});
+    }
         return res.status(400).json({error:"Unknown admin action"});
     }
 
