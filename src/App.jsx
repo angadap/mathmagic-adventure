@@ -63,7 +63,7 @@ function GlobalStyles() {
     if (!document.getElementById("mm-fonts")) {
       const l = document.createElement("link");
       l.id = "mm-fonts";
-      l.href = "https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@500;700;800;900&display=swap";
+      l.href = "https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;700;800;900&display=swap";
       l.rel = "stylesheet";
       document.head.appendChild(l);
     }
@@ -87,6 +87,14 @@ function GlobalStyles() {
         @keyframes glow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4)}}
         @keyframes loadBar{from{width:0}to{width:100%}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes correctBounce{0%{transform:scale(1)}20%{transform:scale(1.18) rotate(-3deg)}40%{transform:scale(1.12) rotate(2deg)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+        @keyframes wrongWiggle{0%,100%{transform:rotate(0deg)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
+        @keyframes starBurst{0%{opacity:1;transform:scale(0) translate(0,0)}100%{opacity:0;transform:scale(1.5) translate(var(--dx),var(--dy))}}
+        @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+        @keyframes superCorrect{0%{transform:scale(1);filter:brightness(1)}30%{transform:scale(1.25);filter:brightness(1.6)}60%{transform:scale(1.1);filter:brightness(1.3)}100%{transform:scale(1);filter:brightness(1)}}
+        @keyframes floatEmoji{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-80px) scale(1.5);opacity:0}}
+        @keyframes heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.3)}28%{transform:scale(1)}42%{transform:scale(1.2)}70%{transform:scale(1)}}
+        @keyframes rainbowBg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
         .mm-btn-press:active{transform:scale(0.95)!important;transition:transform 0.08s!important}
         .mm-haptic:active{transform:scale(0.97)}
         @keyframes spinR{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -94,7 +102,9 @@ function GlobalStyles() {
         @keyframes bossW{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
         *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
         body{background:${C.bg}}
-        input{font-family:'Nunito',sans-serif;outline:none;color:white}
+        body,*{font-family:'Baloo 2','Nunito',sans-serif;}
+        input,textarea,select{font-family:'Baloo 2','Nunito',sans-serif;outline:none;color:white}
+        input::placeholder,textarea::placeholder{color:#4a5080}
         input::placeholder{color:${C.dim}}
         ::-webkit-scrollbar{width:3px}
         ::-webkit-scrollbar-thumb{background:#a855f7;border-radius:4px}
@@ -2547,12 +2557,12 @@ function Btn({ children, onClick, color = C.cyan, disabled, loading, style: sx =
       onClick={!disabled && !loading ? handleClick : undefined}
       className="mm-btn-press"
       style={{
-        width:"100%", padding:"13px 18px",
+        width:"100%", padding:"16px 20px",
         border:`2px solid ${disabled || loading ? "#1a1a35" : color}`,
-        borderRadius:14,
+        borderRadius:16,
         background: disabled || loading ? "#08081a" : `${color}18`,
         color: disabled || loading ? "#2a2a50" : color,
-        fontSize:13, fontFamily:"'Orbitron',sans-serif", fontWeight:700,
+        fontSize:16, fontFamily:"'Baloo 2','Nunito',sans-serif", fontWeight:800,
         cursor: disabled || loading ? "not-allowed" : "pointer",
         letterSpacing:1,
         boxShadow: disabled || loading ? "none" : `0 0 14px ${color}33`,
@@ -2702,8 +2712,8 @@ function BackBtn({ onClick, color = C.purple }) {
   return (
     <button onClick={()=>{SFX.back();if(onClick)onClick();}} style={{
       background:`${color}18`, border:`1px solid ${color}44`,
-      borderRadius:10, width:36, height:36, color,
-      fontSize:18, cursor:"pointer",
+      borderRadius:12, width:42, height:42, color,
+      fontSize:22, cursor:"pointer",
       display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
     }}>‹</button>
   );
@@ -3932,41 +3942,44 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
   const q    = questions[qi % questions.length];
 
   if (done) return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Nunito',sans-serif", padding:22, position:"relative" }}>
+    <div style={{ minHeight:"100vh", background: fst>=2 ? "linear-gradient(160deg,#0a0a1f,#05161a,#0a0a1f)" : C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Baloo 2','Nunito',sans-serif", padding:22, position:"relative", overflow:"hidden" }}>
       {showCert && <Certificate child={child} lesson={lesson} stars={fst} onClose={()=>setShowCert(false)}/>}
       <Confetti active={fst>=2}/>
       <Starfield n={60}/>
-      <div style={{ position:"relative", zIndex:1, textAlign:"center", animation:"popIn 0.5s ease" }}>
-        <div style={{ fontSize:72, marginBottom:10, filter:`drop-shadow(0 0 24px ${fst>=2 ? C.yellow : C.dim})` }}>
+      {/* Big celebration emoji rain for perfect score */}
+      {fst===3 && ["🎉","⭐","🚀","🏆","🌟","🎊","💫","✨"].map((e,i)=>(
+        <div key={i} style={{position:"fixed",left:`${10+i*12}%`,top:"-10px",fontSize:28,animation:`confettiFall ${2+i*0.3}s ${i*0.2}s ease-in forwards`,zIndex:0,pointerEvents:"none"}}>{e}</div>
+      ))}
+      <div style={{ position:"relative", zIndex:1, textAlign:"center", animation:"popIn 0.5s ease", width:"100%", maxWidth:360 }}>
+        <div style={{ fontSize:90, marginBottom:8, animation:"heartbeat 1.2s ease infinite", filter:`drop-shadow(0 0 30px ${fst>=2 ? C.yellow : C.dim})` }}>
           {mode==="boss" && bossHpRef.current<=0 ? "🏆" : fst===3 ? "🏆" : fst===2 ? "🥈" : fst>=1 ? "🥉" : "💫"}
         </div>
-        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:20, background:`linear-gradient(135deg,${C.cyan},${C.purple})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", marginBottom:8 }}>
-          {mode==="boss" && bossHpRef.current<=0 ? "BOSS DEFEATED!" : fst>=2 ? "MISSION COMPLETE!" : fst>=1 ? "GOOD EFFORT!" : "KEEP TRAINING!"}
+        <div style={{ fontSize:26, fontWeight:900, background:`linear-gradient(135deg,${C.cyan},${C.purple})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", marginBottom:10 }}>
+          {mode==="boss" && bossHpRef.current<=0 ? "BOSS DEFEATED! 💥" : fst===3 ? "PERFECT! 🌟" : fst>=2 ? "MISSION COMPLETE! 🚀" : fst>=1 ? "GOOD EFFORT! 💪" : "KEEP TRAINING! 🔥"}
         </div>
-        <div style={{ display:"flex", gap:10, justifyContent:"center", marginBottom:16 }}>
-          {[1,2,3].map(i => <span key={i} style={{ fontSize:34, filter: i<=fst ? "none" : "grayscale(1) opacity(0.2)" }}>⭐</span>)}
+        <div style={{ display:"flex", gap:12, justifyContent:"center", marginBottom:20 }}>
+          {[1,2,3].map(i => <span key={i} style={{ fontSize:46, filter: i<=fst ? "none" : "grayscale(1) opacity(0.2)", animation: i<=fst ? `starPop 0.4s ${i*0.15}s both` : "none" }}>⭐</span>)}
         </div>
-        <Card color={C.purple} style={{ marginBottom:16, textAlign:"center", padding:"14px 26px" }}>
-          <div style={{ color:C.dim, fontSize:10, fontFamily:"'Orbitron',sans-serif", letterSpacing:1 }}>SCORE</div>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:38, color:"white"}}>{fs}<span style={{ fontSize:15, color:C.dim }}>/{questions.length}</span></div>
-          <div style={{ color:C.yellow, fontWeight:700, fontSize:12, marginTop:3 }}>+{fs*20+(mode==="boss"?50:0)} XP · +{fst*10} COINS</div>
-          <div style={{ color:C.green, fontSize:9, marginTop:4, fontFamily:"'Orbitron',sans-serif" }}>✅ PROGRESS SAVED</div>
+        <Card color={C.purple} style={{ marginBottom:16, textAlign:"center", padding:"18px 26px" }}>
+          <div style={{ color:C.dim, fontSize:13, fontWeight:700, letterSpacing:1, marginBottom:4 }}>YOUR SCORE</div>
+          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:48, color:"white", fontWeight:900 }}>{fs}<span style={{ fontSize:18, color:C.dim }}>/{questions.length}</span></div>
+          <div style={{ color:C.yellow, fontWeight:800, fontSize:16, marginTop:6 }}>+{fs*20+(mode==="boss"?50:0)} XP 🌟 +{fst*10} Coins 🪙</div>
+          <div style={{ color:C.green, fontSize:13, marginTop:6, fontWeight:700 }}>✅ Progress saved!</div>
         </Card>
-        {/* Unlock badge for next set */}
         {setIndex < 9 && fst >= 1 && (
-          <div style={{ background:`${C.green}18`, border:`1px solid ${C.green}44`, borderRadius:11, padding:"7px 14px", marginBottom:12, width:"100%", maxWidth:300 }}>
-            <div style={{ color:C.green, fontSize:10, fontFamily:"'Orbitron',sans-serif", textAlign:"center" }}>🔓 SET {setIndex+2} UNLOCKED!</div>
+          <div style={{ background:`${C.green}18`, border:`2px solid ${C.green}44`, borderRadius:14, padding:"10px 18px", marginBottom:14, width:"100%", animation:"popIn 0.4s 0.3s both" }}>
+            <div style={{ color:C.green, fontSize:16, fontWeight:800, textAlign:"center" }}>🔓 Set {setIndex+2} Unlocked!</div>
           </div>
         )}
-        <div style={{ display:"flex", gap:8, width:"100%", maxWidth:300 }}>
-          <Btn color={C.dim} style={{ flex:1, padding:"11px" }} onClick={() => {
+        <div style={{ display:"flex", gap:10, width:"100%" }}>
+          <Btn color={C.dim} style={{ flex:1 }} onClick={() => {
             scoreRef.current = 0; livesRef.current = mode==="boss"?5:3; bossHpRef.current = 100; processing.current = false;
             setQi(0); setChosen(null); setScore(0); setLives(mode==="boss"?5:3); setBossHp(100); setDone(false); setBossCD(mode==="boss"?3:0); setTimeLeft(mode==="boss"?30:null);
-          }}>↺ RETRY</Btn>
-          <Btn color={C.purple} style={{ flex:1, padding:"11px" }} onClick={onBack}>🏠</Btn>
+          }}>↺ Retry</Btn>
+          <Btn color={C.purple} style={{ flex:1 }} onClick={onBack}>🏠 Home</Btn>
           {setIndex < 9 && fst >= 1
-            ? <Btn color={C.cyan} style={{ flex:1, padding:"11px" }} onClick={() => onNextSet && onNextSet(setIndex+1)}>SET {setIndex+2} →</Btn>
-            : <Btn color={C.cyan} style={{ flex:1, padding:"11px" }} onClick={onDone}>DONE ✓</Btn>
+            ? <Btn color={C.cyan} style={{ flex:1 }} onClick={() => onNextSet && onNextSet(setIndex+1)}>Next Set →</Btn>
+            : <Btn color={C.cyan} style={{ flex:1 }} onClick={onDone}>Done ✓</Btn>
           }
         </div>
       </div>
@@ -4006,14 +4019,14 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
         <div style={{ fontSize:58, animation:"bossW 1.5s ease-in-out infinite", marginBottom:10 }}>{lesson.boss||"👾"}</div>
         {burst && <div style={{ fontSize:13, color:C.green, marginBottom:6, fontFamily:"'Orbitron',sans-serif", position:"fixed", top:"20%", left:"50%", transform:"translateX(-50%)", zIndex:998, background:`${C.green}22`, borderRadius:12, padding:"8px 20px" }}>⚡ HIT! Boss HP: {bossHp}%</div>}
         <Card color={C.red} style={{ marginBottom:12, padding:"16px 14px", textAlign:"left" }}>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:"white", lineHeight:1.5 }}>{q.q}</div>
+          <div style={{ fontSize:20, color:"white", lineHeight:1.5, fontWeight:800 }}>{q.q}</div>
         </Card>
         <div style={{ fontSize:9, color:C.dim, fontFamily:"'Orbitron',sans-serif", marginBottom:8 }}>Q {qi+1}/{questions.length} · Score: {score}</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
           {q.opts.map((opt, i) => {
             let bg=C.card, border=`1.5px solid ${C.red}28`, col="white";
             if (chosen!==null) { if(i===q.ans){bg="#052e16";border=`2px solid ${C.green}`;col="#4ade80";}else if(i===chosen){bg="#2d0a0a";border=`2px solid ${C.red}`;col="#f87171";} }
-            return <button key={i} onClick={() => pick(i)} style={{ background:bg, border, borderRadius:13, padding:"13px 10px", fontSize:16, fontFamily:"'Orbitron',sans-serif", color:col, cursor: chosen!==null?"default":"pointer", transition:"all 0.15s" }}>{i===q.ans&&chosen!==null?"✓ ":""}{opt}</button>;
+            return <button key={i} onClick={() => pick(i)} style={{ background:bg, border, borderRadius:18, padding:"18px 12px", fontSize:18, fontWeight:800, color:col, cursor: chosen!==null?"default":"pointer", transition:"all 0.2s", boxShadow: i===q.ans&&chosen!==null?`0 0 20px ${C.green}66`:"none", animation:i===q.ans&&chosen!==null?"superCorrect 0.5s ease":"none" }}>{i===q.ans&&chosen!==null?"✓ ":""}{opt}</button>;
           })}
         </div>
       </div>
@@ -4033,7 +4046,7 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
       </div>
       <div style={{ position:"relative", zIndex:2, padding:"18px 18px", textAlign:"center" }}>
         <Card color={world.color} style={{ marginBottom:18, padding:"14px" }}>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:15, color:"white"}}>{q.q}</div>
+          <div style={{ fontSize:20, color:"white", fontWeight:800, lineHeight:1.4 }}>{q.q}</div>
           <div style={{ color:C.dim, fontSize:11, marginTop:5, fontFamily:"'Orbitron',sans-serif" }}>TAP THE CORRECT BUBBLE!</div>
         </Card>
         <div style={{ display:"flex", flexWrap:"wrap", gap:16, justifyContent:"center", marginTop:10 }}>
@@ -4045,7 +4058,7 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
               else if (b.id === chosen){ bg = `radial-gradient(circle at 30% 30%, ${C.red}88, ${C.red}33)`;   brd = `3px solid ${C.red}`;   }
             }
             return (
-              <button key={b.id} onClick={() => chosen === null && pick(b.id)} style={{ width:76, height:76, borderRadius:"50%", background:bg, border:brd, color:"white", fontSize:15, fontFamily:"'Orbitron',sans-serif", fontWeight:700, cursor: chosen!==null?"default":"pointer", boxShadow:`0 0 18px ${world.color}55`, animation:`bFloat ${2+idx*0.3}s ease-in-out ${idx*0.2}s infinite`, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s" }}>
+              <button key={b.id} onClick={() => chosen === null && pick(b.id)} style={{ width:96, height:96, borderRadius:"50%", background:bg, border:brd, color:"white", fontSize:19, fontWeight:800, cursor: chosen!==null?"default":"pointer", boxShadow:`0 0 22px ${world.color}66`, animation:`bFloat ${2+idx*0.3}s ease-in-out ${idx*0.2}s infinite`, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s" }}>
                 {b.text}
               </button>
             );
@@ -4074,24 +4087,62 @@ function Game({ lesson, world, child, setChild, onBack, onDone, onNextSet }) {
           <span style={{ fontSize:9, color:C.yellow, fontFamily:"'Orbitron',sans-serif" }}>SCORE: {score}</span>
         </div>
       </div>
-      <div style={{ position:"relative", zIndex:2, padding:"14px 18px" }}>
-        {/* correct feedback: card scales up */}
-        <Card color={world.color} style={{ textAlign:"center", padding:"18px 14px", marginBottom:12, transform: burst?"scale(1.02)":"scale(1)", transition:"transform 0.2s" }}>
-          <div style={{ fontSize:34, marginBottom:8 }}>{lesson.emoji}</div>
-          <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:16, color:"white", lineHeight:1.4 }}>{q.q}</div>
-          {/* correct shown via overlay below */}
+      {/* ✅ Correct / ❌ Wrong floating emoji */}
+      {chosen!==null && chosen===q.ans && (
+        <div style={{position:"fixed",top:"30%",left:"50%",transform:"translateX(-50%)",zIndex:999,pointerEvents:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+          <div style={{fontSize:72,animation:"floatEmoji 1.2s ease-out forwards"}}>⭐</div>
+          <div style={{fontSize:52,animation:"floatEmoji 1.2s 0.15s ease-out forwards"}}>🎉</div>
+        </div>
+      )}
+      {chosen!==null && chosen!==q.ans && (
+        <div style={{position:"fixed",top:"30%",left:"50%",transform:"translateX(-50%)",zIndex:999,pointerEvents:"none"}}>
+          <div style={{fontSize:64,animation:"floatEmoji 1s ease-out forwards"}}>💫</div>
+        </div>
+      )}
+      <div style={{ position:"relative", zIndex:2, padding:"14px 16px" }}>
+        <Card color={world.color} style={{ textAlign:"center", padding:"22px 18px", marginBottom:16,
+          transform: chosen===q.ans&&chosen!==null ? "scale(1)" : "scale(1)",
+          animation: chosen===q.ans&&chosen!==null ? "correctBounce 0.6s ease" : chosen!==null&&chosen!==q.ans ? "wrongWiggle 0.5s ease" : "none",
+          boxShadow: chosen===q.ans&&chosen!==null ? `0 0 40px ${C.green}66` : chosen!==null ? `0 0 20px ${C.red}44` : `0 0 20px ${world.color}22`,
+          transition:"box-shadow 0.3s"
+        }}>
+          <div style={{ fontSize:42, marginBottom:10 }}>{lesson.emoji}</div>
+          <div style={{ fontSize:20, color:"white", lineHeight:1.5, fontWeight:800 }}>{q.q}</div>
         </Card>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
           {q.opts.map((opt, i) => {
-            let bg=C.card, border=`1.5px solid ${world.color}28`, col="white";
-            if (chosen!==null) { if(i===q.ans){bg="#052e16";border=`2px solid ${C.green}`;col="#4ade80";}else if(i===chosen){bg="#2d0a0a";border=`2px solid ${C.red}`;col="#f87171";} }
-            return <button key={i} onClick={() => pick(i)} style={{ background:bg, border, borderRadius:13, padding:"13px 10px", fontSize:16, fontFamily:"'Orbitron',sans-serif", color:col, cursor: chosen!==null?"default":"pointer", transition:"all 0.15s" }}>{i===q.ans&&chosen!==null?"✓ ":i===chosen&&i!==q.ans&&chosen!==null?"✗ ":""}{opt}</button>;
+            const isCorrect = i===q.ans;
+            const isChosen  = i===chosen;
+            const answered  = chosen!==null;
+            let bg=C.card, border=`2px solid ${world.color}28`, col="white", shadow="none", anim="none";
+            if (answered) {
+              if (isCorrect)     { bg="#052e16"; border=`3px solid ${C.green}`; col="#4ade80"; shadow=`0 0 24px ${C.green}88`; anim="superCorrect 0.5s ease"; }
+              else if (isChosen) { bg="#2d0a0a"; border=`3px solid ${C.red}`;   col="#f87171"; shadow=`0 0 14px ${C.red}44`; }
+            }
+            const optLabels = ["A","B","C","D"];
+            return (
+              <button key={i} onClick={() => pick(i)} style={{ background:bg, border, borderRadius:18, padding:"16px 12px", fontSize:18, fontWeight:800, color:col, cursor:answered?"default":"pointer", transition:"all 0.2s", boxShadow:shadow, animation:anim, position:"relative", textAlign:"center", lineHeight:1.4 }}>
+                <div style={{fontSize:11,color:answered&&isCorrect?"#4ade80":answered&&isChosen?"#f87171":world.color,fontFamily:"'Orbitron',sans-serif",marginBottom:4,opacity:0.8}}>{optLabels[i]}</div>
+                {answered && isCorrect ? "✓ " : answered && isChosen && !isCorrect ? "✗ " : ""}{opt}
+              </button>
+            );
           })}
         </div>
         {chosen === null && (
-          <button onClick={() => setHint(h => !h)} style={{ width:"100%", background: hint ? `${C.yellow}14` : C.card, border:`1.5px solid ${hint ? C.yellow+"55" : "#111128"}`, borderRadius:12, padding:"10px 13px", cursor:"pointer", color: hint ? C.yellow : C.dim, fontSize:12, fontWeight:700, textAlign:"left" }}>
+          <button onClick={() => setHint(h => !h)} style={{ width:"100%", background: hint ? `${C.yellow}18` : C.card, border:`2px solid ${hint ? C.yellow+"66" : "#111128"}`, borderRadius:16, padding:"13px 16px", cursor:"pointer", color: hint ? C.yellow : C.dim, fontSize:15, fontWeight:700, textAlign:"left" }}>
             💡 {hint ? q.h : "Tap for a cosmic hint!"}
           </button>
+        )}
+        {chosen!==null && chosen===q.ans && (
+          <div style={{marginTop:12,textAlign:"center",background:`${C.green}15`,borderRadius:16,padding:"12px 16px",border:`2px solid ${C.green}33`}}>
+            <div style={{fontSize:28,marginBottom:4,animation:"heartbeat 1s ease infinite"}}>🌟</div>
+            <div style={{color:C.green,fontSize:17,fontWeight:800}}>Amazing! +{q.xp||10} XP</div>
+          </div>
+        )}
+        {chosen!==null && chosen!==q.ans && (
+          <div style={{marginTop:12,textAlign:"center",background:`${C.orange}12`,borderRadius:16,padding:"12px 16px",border:`2px solid ${C.orange}33`}}>
+            <div style={{color:C.orange,fontSize:15,fontWeight:800}}>💡 Hint: {q.h}</div>
+          </div>
         )}
       </div>
     </div>
@@ -5507,7 +5558,7 @@ function DailyQuiz({ child, onClose }) {
           </div>
         ) : (
           <>
-            <div style={{background:`${C.yellow}10`,border:`1px solid ${C.yellow}22`,borderRadius:14,padding:"14px 16px",marginBottom:18,lineHeight:1.7,fontSize:14,color:"white",fontWeight:600}}>
+            <div style={{background:`${C.yellow}10`,border:`1px solid ${C.yellow}22`,borderRadius:14,padding:"16px 18px",marginBottom:18,lineHeight:1.6,fontSize:19,color:"white",fontWeight:800}}>
               📖 {challenge.question}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:9,marginBottom:16,animation:shake?"shake 0.4s":"none"}}>
@@ -5522,7 +5573,7 @@ function DailyQuiz({ child, onClose }) {
                 }
                 return (
                   <button key={key} onClick={()=>handleAnswer(key)} disabled={!!chosen}
-                    style={{background:bg,border:`2px solid ${border}`,borderRadius:12,padding:"11px 16px",cursor:chosen?"default":"pointer",textAlign:"left",color,fontWeight:700,fontSize:14,transition:"all 0.2s"}}>
+                    style={{background:bg,border:`2px solid ${border}`,borderRadius:16,padding:"14px 16px",cursor:chosen?"default":"pointer",textAlign:"left",color,fontWeight:800,fontSize:17,transition:"all 0.2s",animation:answered&&isCorrect&&key===challenge.correct?"superCorrect 0.5s ease":"none",boxShadow:answered&&isCorrect&&key===challenge.correct?`0 0 20px ${C.green}66`:"none"}}>
                     <span style={{marginRight:10,opacity:0.6,fontFamily:"'Orbitron',sans-serif",fontSize:11}}>{key}</span>{val}
                     {answered && isCorrect && <span style={{float:"right"}}>✅</span>}
                     {answered && isChosen && !isCorrect && <span style={{float:"right"}}>❌</span>}
