@@ -3805,102 +3805,239 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
 }
 
 // ── Lessons ───────────────────────────────────────────────────────────
+function SetPathMap({ lesson, world, progress, onLesson, onBack, isSetDone, isSetUnlocked, completedSets }) {
+  const cSets = completedSets(lesson.id);
+  // Duolingo-style zigzag: positions alternate left-center-right
+  const cols = [2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1]; // 1=left,2=center,3=right
+  const colPx = { 1: "18%", 2: "50%", 3: "82%" };
+  const EMOJIS = ["🌟","🎯","🚀","⭐","🏆","💡","🎮","🔥","💫","✨","🎪","🌈","🎓","🧠","⚡","🎁","🏅","🌙","🪄","👑"];
+  const CHEST_SETS = [4, 9, 14, 19]; // treasure chests every 5
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Baloo 2','Nunito',sans-serif", position:"relative", overflowX:"hidden" }}>
+      {/* Header */}
+      <div style={{ position:"sticky", top:0, zIndex:10, background:C.card, borderBottom:`3px solid ${world.color}44`, padding:"14px 18px", display:"flex", alignItems:"center", gap:12, boxShadow:`0 2px 12px ${world.color}22` }}>
+        <BackBtn onClick={onBack} color={world.color}/>
+        <div style={{ width:44, height:44, borderRadius:14, background:`linear-gradient(135deg,${world.color},${world.color}99)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, boxShadow:`0 0 14px ${world.color}55`, flexShrink:0 }}>{lesson.emoji}</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:11, color:world.color, fontWeight:900, letterSpacing:2, textTransform:"uppercase" }}>Lesson {lesson._li+1}</div>
+          <div style={{ fontSize:16, fontWeight:900, color:textColor() }}>{lesson.title}</div>
+          <div style={{ fontSize:11, color:C.dim }}>{lesson.sub}</div>
+        </div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ fontSize:20, fontWeight:900, color:world.color }}>{cSets}<span style={{ fontSize:11, color:C.dim }}>/20</span></div>
+          <div style={{ fontSize:10, color:C.dim }}>sets done</div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ padding:"10px 18px 0" }}>
+        <div style={{ background:isDark()?"rgba(255,255,255,0.08)":C.border||"#ece8ff", borderRadius:20, height:10, overflow:"hidden" }}>
+          <div style={{ width:`${(cSets/20)*100}%`, height:"100%", background:`linear-gradient(90deg,${world.color},${C.cyan})`, borderRadius:20, transition:"width 0.6s ease", boxShadow:`0 0 8px ${world.color}66` }}/>
+        </div>
+        <div style={{ fontSize:11, color:C.dim, marginTop:4, textAlign:"center" }}>{cSets}/20 sets complete — keep going! 🚀</div>
+      </div>
+
+      {/* Path map */}
+      <div style={{ position:"relative", padding:"20px 0 60px", minHeight: 20*110+"px" }}>
+        {/* Vertical connecting line */}
+        <div style={{ position:"absolute", left:"50%", top:0, bottom:0, width:3, background:isDark()?"rgba(255,255,255,0.06)":C.border||"#ece8ff", transform:"translateX(-50%)", zIndex:0 }}/>
+
+        {Array.from({length:20}, (_,si) => {
+          const sDone   = isSetDone(lesson.id, si);
+          const sUnlock = isSetUnlocked(lesson.id, si);
+          const isChest = CHEST_SETS.includes(si);
+          const isCurrent = !sDone && sUnlock;
+          const col = cols[si];
+          const left = colPx[col];
+          const top = si * 110 + 30;
+
+          // Connecting line segment color
+          const lineColor = sDone ? world.color : isDark() ? "rgba(255,255,255,0.07)" : C.border||"#ece8ff";
+
+          return (
+            <div key={si} style={{ position:"absolute", left, top, transform:"translateX(-50%)", zIndex:2, display:"flex", flexDirection:"column", alignItems:"center" }}>
+              {/* Line down to next */}
+              {si < 19 && (
+                <div style={{ position:"absolute", top:72, left:"50%", transform:"translateX(-50%)", width:3, height:38, background:lineColor, borderRadius:2, zIndex:1 }}/>
+              )}
+              {/* The node button */}
+              <button
+                onClick={() => { if(sUnlock){ SFX.unlock(); onLesson({...lesson, setIndex:si, _progress:progress}); } else SFX.wrong(); }}
+                style={{
+                  width: isCurrent ? 76 : isChest ? 68 : 64,
+                  height: isCurrent ? 76 : isChest ? 68 : 64,
+                  borderRadius:"50%",
+                  border: isCurrent ? `4px solid ${world.color}` : sDone ? `3px solid ${world.color}` : `3px solid ${isDark()?"rgba(255,255,255,0.15)":C.border||"#ddd"}`,
+                  background: sDone
+                    ? `linear-gradient(135deg,${world.color},${world.color}bb)`
+                    : isCurrent
+                      ? `linear-gradient(135deg,${world.color}22,${world.color}11)`
+                      : isDark() ? "rgba(255,255,255,0.04)" : "#f5f0ff",
+                  cursor: sUnlock ? "pointer" : "not-allowed",
+                  display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                  boxShadow: isCurrent
+                    ? `0 0 0 6px ${world.color}33, 0 4px 20px ${world.color}55`
+                    : sDone
+                      ? `0 4px 16px ${world.color}55`
+                      : "none",
+                  animation: isCurrent ? "heartbeat 1.5s ease-in-out infinite" : "none",
+                  transition:"all 0.2s",
+                  opacity: sUnlock ? 1 : 0.35,
+                  position:"relative",
+                  zIndex:2,
+                }}>
+                {isChest && !sDone && sUnlock ? (
+                  <span style={{ fontSize:30 }}>🎁</span>
+                ) : sDone ? (
+                  <span style={{ fontSize:28 }}>⭐</span>
+                ) : sUnlock ? (
+                  <span style={{ fontSize:26 }}>{EMOJIS[si % EMOJIS.length]}</span>
+                ) : (
+                  <span style={{ fontSize:24 }}>🔒</span>
+                )}
+                {isCurrent && (
+                  <div style={{ position:"absolute", top:-8, left:"50%", transform:"translateX(-50%)", background:world.color, color:"white", fontSize:9, fontWeight:900, borderRadius:10, padding:"2px 7px", whiteSpace:"nowrap", fontFamily:"'Orbitron',sans-serif" }}>START</div>
+                )}
+              </button>
+              {/* Set label below */}
+              <div style={{ marginTop:6, textAlign:"center" }}>
+                <div style={{ fontSize:11, fontWeight:900, color: sDone ? world.color : isCurrent ? world.color : C.dim, fontFamily:"'Orbitron',sans-serif" }}>Set {si+1}</div>
+                {sDone && <div style={{ fontSize:9, color:C.green }}>✓ Done</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function LessonMap({ world, child, onBack, onLesson, isLessonPurchased, onPurchaseLesson }) {
-  const [progress,   setProgress]   = useState([]);
-  const [expanded,   setExpanded]   = useState(null); // which lesson is expanded
+  const [progress,    setProgress]    = useState([]);
+  const [activeLesson, setActiveLesson] = useState(null); // when set → show SetPathMap
   const lessons = LESSONS[child.class_num] || LESSONS[1];
+
   useEffect(() => {
     db.getProgress(child.id).then(({ data }) => setProgress(data || []));
-    // Prefetch Set 1 of all unlocked lessons silently
     const lessons = LESSONS[child.class_num] || LESSONS[1];
-    lessons.forEach((l, i) => {
-      if (i === 0) fetchSetQuestions(l.id, 0); // always prefetch first lesson
-    });
+    lessons.forEach((l, i) => { if (i === 0) fetchSetQuestions(l.id, 0); });
   }, [child.id]);
 
-  const isSetDone   = (lid, si) => progress.some(p => p.lesson_id === lid + "_s" + si && (p.stars_earned||0) >= 1);
+  const isSetDone     = (lid, si) => progress.some(p => p.lesson_id === lid+"_s"+si && (p.stars_earned||0) >= 1);
   const isSetUnlocked = (lid, si) => si === 0 || isSetDone(lid, si - 1);
-  const lessonDone  = (lid) => isSetDone(lid, 19); // all 20 sets done
+  const lessonDone    = (lid) => isSetDone(lid, 19);
   const lessonStarted = (lid) => isSetDone(lid, 0);
   const completedSets = (lid) => Array.from({length:20},(_,i)=>i).filter(i=>isSetDone(lid,i)).length;
   const worldProg = lessons.filter(l => lessonStarted(l.id)).length;
   const totalSets = lessons.length * 20;
   const doneSets  = lessons.reduce((s,l)=>s+completedSets(l.id),0);
 
+  // Show SetPathMap when a lesson is tapped
+  if (activeLesson) {
+    return <SetPathMap
+      lesson={activeLesson} world={world} progress={progress}
+      onLesson={onLesson} onBack={() => setActiveLesson(null)}
+      isSetDone={isSetDone} isSetUnlocked={isSetUnlocked} completedSets={completedSets}
+    />;
+  }
+
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Nunito',sans-serif", paddingBottom:40, position:"relative" }}>
-      <Starfield n={20}/>
-      <div style={{ position:"relative", zIndex:2, background:`${world.color}1a`, borderBottom:`1px solid ${world.color}33`, padding:"14px 18px" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Baloo 2','Nunito',sans-serif", paddingBottom:40, position:"relative" }}>
+      <Starfield n={isDark()?20:8}/>
+      {/* Header */}
+      <div style={{ position:"relative", zIndex:2, background:isDark()?`${world.color}1a`:C.card, borderBottom:`3px solid ${world.color}44`, padding:"16px 18px", boxShadow:`0 2px 12px ${world.color}22` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:12 }}>
           <BackBtn onClick={onBack} color={world.color}/>
-          <div>
-            <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:14, color:world.color }}>{world.world.toUpperCase()}</div>
-            <div style={{ fontSize:11, color:C.dim }}>{world.name} · {doneSets}/{totalSets} Sets Done</div>
+          <div style={{ width:48, height:48, borderRadius:16, background:`linear-gradient(135deg,${world.color},${world.color}99)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, boxShadow:`0 0 16px ${world.color}55`, flexShrink:0 }}>{world.planet}</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:11, color:world.color, letterSpacing:2 }}>{world.world.toUpperCase()}</div>
+            <div style={{ fontSize:16, fontWeight:900, color:textColor() }}>{world.name}</div>
+            <div style={{ fontSize:11, color:C.dim }}>{doneSets}/{totalSets} Sets Done</div>
           </div>
-          <div style={{ marginLeft:"auto", fontSize:28 }}>{world.planet}</div>
         </div>
-        <div style={{ background:isDark()?"rgba(255,255,255,0.06)":"rgba(124,111,224,0.06)", borderRadius:7, height:6, overflow:"hidden" }}>
-          <div style={{ width:`${(doneSets/totalSets)*100}%`, height:"100%", background:`linear-gradient(90deg,${world.color},${C.cyan})`, borderRadius:7 }}/>
+        <div style={{ background:isDark()?"rgba(255,255,255,0.06)":C.border||"#ece8ff", borderRadius:10, height:10, overflow:"hidden" }}>
+          <div style={{ width:`${totalSets>0?(doneSets/totalSets)*100:0}%`, height:"100%", background:`linear-gradient(90deg,${world.color},${C.cyan})`, borderRadius:10, transition:"width 0.8s ease", boxShadow:`0 0 8px ${world.color}66` }}/>
         </div>
-        <div style={{ fontSize:10, color:C.dim, marginTop:3, fontFamily:"'Orbitron',sans-serif" }}>{worldProg}/{lessons.length} LESSONS STARTED</div>
+        <div style={{ fontSize:11, color:C.dim, marginTop:4, fontFamily:"'Orbitron',sans-serif" }}>{worldProg}/{lessons.length} LESSONS STARTED</div>
       </div>
+
+      {/* Lessons list */}
       <div style={{ position:"relative", zIndex:2, padding:"16px 18px" }}>
         {lessons.map((lesson, li) => {
-          const done   = lessonDone(lesson.id);
-          const cSets  = completedSets(lesson.id);
-          const isExp  = expanded === lesson.id;
+          const done = lessonDone(lesson.id);
+          const started = lessonStarted(lesson.id);
+          const cSets = completedSets(lesson.id);
+          const pct = Math.round(cSets/20*100);
           const isOwnClass = world.id === parseInt(child.class_num||1) || child.is_premium;
           const purchased = isOwnClass || (isLessonPurchased && isLessonPurchased(world.id, lesson.id));
-          const lessonUnlocked = purchased;
+          const nextLesson = !done && purchased && (li === 0 || lessonStarted(lessons[li-1]?.id));
           return (
-            <div key={lesson.id} style={{ marginBottom:10 }}>
-              {/* Lesson header row */}
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom: isExp ? 8 : 0 }}>
-                <div style={{ width:48, height:48, borderRadius:14, background: done ? `linear-gradient(135deg,${world.color},${world.color}aa)` : lessonUnlocked ? C.card2 : C.card2, border:`2px solid ${done ? world.color : lessonUnlocked ? world.color+"44" : C.dim+"33"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>
-                  {done ? "✅" : lessonUnlocked ? lesson.emoji : "🔒"}
-                </div>
-                <button onClick={() => lessonUnlocked ? setExpanded(isExp ? null : lesson.id) : (onPurchaseLesson && onPurchaseLesson(lesson.id, world.id, 300))}
-                  style={{ flex:1, background: done ? `${world.color}0e` : lessonUnlocked ? C.card : C.card2, border:`1.5px solid ${done ? world.color+"44" : lessonUnlocked ? world.color+"1a" : C.dim+"33"}`, borderRadius:13, padding:"10px 13px", cursor: lessonUnlocked ? "pointer" : "not-allowed", textAlign:"left" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:12, color: lessonUnlocked ? "white" : C.dim }}>
-                      L{li+1}: {lesson.title}
-                      {world.id !== child.class_num && isLessonPurchased && !isLessonPurchased(world.id, lesson.id) && <span style={{fontSize:10,color:C.orange,marginLeft:6}}>💰 ₹300</span>}
-                    </div>
-                    <div style={{ display:"flex", gap:5, alignItems:"center" }}>
-                      <span style={{ fontSize:9, color:C.dim, fontFamily:"'Orbitron',sans-serif" }}>{cSets}/20 sets</span>
-                      <span style={{ fontSize:13, color: lessonUnlocked ? world.color : C.dim }}>{isExp ? "▲" : "▼"}</span>
-                    </div>
+            <div key={lesson.id} style={{ marginBottom:12 }}>
+              {/* Section label for lesson groups */}
+              {li % 3 === 0 && (
+                <div style={{ background:`linear-gradient(135deg,${world.color}22,${world.color}0a)`, border:`1.5px solid ${world.color}33`, borderRadius:14, padding:"10px 16px", marginBottom:10, display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ fontSize:22 }}>{world.planet}</div>
+                  <div>
+                    <div style={{ fontSize:10, color:world.color, fontFamily:"'Orbitron',sans-serif", fontWeight:900, letterSpacing:2 }}>SECTION {Math.floor(li/3)+1}</div>
+                    <div style={{ fontSize:13, fontWeight:800, color:textColor() }}>{world.name}</div>
                   </div>
-                  <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{lesson.sub}</div>
-                  {!lessonUnlocked && (
-                    <div style={{ marginTop:6, background:`${C.orange}22`, borderRadius:8, padding:"5px 8px", fontSize:11, color:C.orange, fontWeight:700 }}>
-                      💰 Unlock this lesson for ₹300 — Tap to buy
-                    </div>
-                  )}
-                  {lessonUnlocked && (
-                    <div style={{ marginTop:5, background:"rgba(255,255,255,0.05)", borderRadius:5, height:4, overflow:"hidden" }}>
-                      <div style={{ width:`${cSets*5}%`, height:"100%", background:`linear-gradient(90deg,${world.color},${C.cyan})`, borderRadius:5 }}/>
-                    </div>
-                  )}
-                </button>
-              </div>
-              {/* Sets grid — shown when expanded */}
-              {isExp && lessonUnlocked && (
-                <div style={{ marginLeft:58, display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:7 }}>
-                  {Array.from({length:20},(_,si) => {
-                    const sDone   = isSetDone(lesson.id, si);
-                    const sUnlock = isSetUnlocked(lesson.id, si);
-                    return (
-                      <button key={si} onClick={() => { if(sUnlock){ SFX.unlock(); onLesson({...lesson, setIndex:si, _progress:progress}); } else SFX.wrong(); }}
-                        style={{ background: sDone ? `${world.color}22` : sUnlock ? C.card2 : "#060614", border:`1.5px solid ${sDone ? world.color : sUnlock ? world.color+"33" : "#0c0c20"}`, borderRadius:11, padding:"8px 5px", cursor: sUnlock ? "pointer" : "not-allowed", textAlign:"center", opacity: sUnlock ? 1 : 0.4 }}>
-                        <div style={{ fontFamily:"'Orbitron',sans-serif", fontSize:9, color: sDone ? world.color : sUnlock ? "#aaa" : "#333" }}>SET {si+1}</div>
-                        <div style={{ fontSize:14, marginTop:2 }}>{sDone ? "✅" : sUnlock ? "▶" : "🔒"}</div>
-                        <div style={{ fontSize:8, color:C.dim, fontFamily:"'Orbitron',sans-serif", marginTop:1 }}>20 Q</div>
-                      </button>
-                    );
-                  })}
                 </div>
               )}
+              <button
+                onClick={() => {
+                  if (!purchased) { onPurchaseLesson && onPurchaseLesson(lesson.id, world.id, 300); return; }
+                  setActiveLesson({...lesson, _li:li});
+                }}
+                style={{
+                  width:"100%", background:C.card, textAlign:"left", cursor:"pointer",
+                  border:`2px solid ${done ? world.color+"66" : nextLesson ? world.color+"88" : purchased ? world.color+"33" : C.dim+"22"}`,
+                  borderRadius:20, padding:"14px 16px", display:"flex", alignItems:"center", gap:14,
+                  boxShadow: nextLesson ? `0 4px 20px ${world.color}44` : done ? `0 2px 12px ${world.color}22` : "none",
+                  transform: nextLesson ? "scale(1.01)" : "none",
+                  transition:"all 0.2s",
+                  opacity: purchased ? 1 : 0.65,
+                }}>
+                {/* Lesson icon circle with progress ring */}
+                <div style={{ position:"relative", flexShrink:0 }}>
+                  <svg width="58" height="58" style={{ transform:"rotate(-90deg)" }}>
+                    <circle cx="29" cy="29" r="23" fill="none" stroke={isDark()?"rgba(255,255,255,0.06)":C.border||"#ece8ff"} strokeWidth="4"/>
+                    <circle cx="29" cy="29" r="23" fill="none" stroke={done?C.green:world.color} strokeWidth="4"
+                      strokeDasharray={`${2*Math.PI*23*pct/100} ${2*Math.PI*23}`} strokeLinecap="round"
+                      style={{transition:"stroke-dasharray 0.8s ease"}}/>
+                  </svg>
+                  <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>
+                    {!purchased ? "🔒" : done ? "✅" : lesson.emoji}
+                  </div>
+                </div>
+                {/* Text */}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:11, color:world.color, fontWeight:900, fontFamily:"'Orbitron',sans-serif", letterSpacing:1, marginBottom:3 }}>LESSON {li+1}</div>
+                  <div style={{ fontSize:16, fontWeight:900, color:textColor(), marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{lesson.title}</div>
+                  <div style={{ fontSize:12, color:C.dim, marginBottom:6 }}>{lesson.sub}</div>
+                  {purchased ? (
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      <div style={{ flex:1, background:isDark()?"rgba(255,255,255,0.07)":C.border||"#ece8ff", borderRadius:20, height:6, overflow:"hidden" }}>
+                        <div style={{ width:`${pct}%`, height:"100%", background:done?`linear-gradient(90deg,${C.green},${C.green}aa)`:`linear-gradient(90deg,${world.color},${C.cyan})`, borderRadius:20, transition:"width 0.6s" }}/>
+                      </div>
+                      <div style={{ fontSize:11, fontWeight:900, color:done?C.green:world.color, whiteSpace:"nowrap" }}>{cSets}/20</div>
+                    </div>
+                  ) : (
+                    <div style={{ background:`${C.orange}22`, borderRadius:10, padding:"4px 10px", display:"inline-block" }}>
+                      <span style={{ fontSize:11, color:C.orange, fontWeight:800 }}>💰 Unlock — ₹300</span>
+                    </div>
+                  )}
+                </div>
+                {/* Arrow / badge */}
+                <div style={{ flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                  {done
+                    ? <div style={{ background:`${C.green}22`, borderRadius:12, padding:"6px 10px" }}><div style={{ fontSize:18 }}>🏆</div></div>
+                    : nextLesson
+                      ? <div style={{ background:world.color, borderRadius:14, padding:"8px 12px", animation:"heartbeat 1.5s ease-in-out infinite" }}><div style={{ fontSize:16, color:"white", fontWeight:900 }}>▶</div></div>
+                      : <div style={{ fontSize:22, color:purchased?world.color:C.dim }}>›</div>
+                  }
+                </div>
+              </button>
             </div>
           );
         })}
