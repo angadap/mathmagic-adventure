@@ -308,81 +308,107 @@ function getDifficulty(progress, lessonId) {
 
 // ── ProgressGrid ─────────────────────────────────────────────────
 function ProgressGrid({ lessons, progress }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false); // collapsed by default
   if (!lessons?.length) return null;
   const setsDone = (lid) => Array.from({length:20},(_,i)=>i)
     .filter(i=>progress.some(p=>p.lesson_id===`${lid}_s${i}`&&(p.stars_earned||0)>=1)).length;
-  const total = lessons.reduce((s,l)=>s+setsDone(l.id),0);
-  const max   = lessons.length*20;
+  const total    = lessons.reduce((s,l)=>s+setsDone(l.id),0);
+  const max      = lessons.length*20;
   const totalPct = max>0?Math.round(total/max*100):0;
+  const COLORS   = [C.purple,C.cyan,C.green,C.orange,C.pink,C.yellow,C.red,"#06b6d4","#8b5cf6","#f43f5e"];
+
   return (
-    <div style={{background:C.card,borderRadius:22,border:`1.5px solid ${C.purple}33`,overflow:"hidden",boxShadow:`0 4px 24px ${C.purple}14`}}>
-      <div onClick={()=>setOpen(o=>!o)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 18px",cursor:"pointer",background:`linear-gradient(135deg,${C.purple}18,${C.cyan}0a)`}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{fontSize:28}}>📈</div>
-          <div>
-            <div style={{fontSize:16,fontWeight:900,color:textColor()}}>Lesson Progress</div>
-            <div style={{fontSize:12,color:C.dim,marginTop:1}}>{total}/{max} sets · {totalPct}% done</div>
+    <div style={{borderRadius:22,overflow:"hidden",boxShadow:`0 4px 20px ${C.purple}18`,border:`1.5px solid ${C.purple}33`}}>
+      {/* Header — always visible */}
+      <div onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:14,padding:"16px 18px",cursor:"pointer",background:isDark()?`linear-gradient(135deg,${C.purple}28,${C.cyan}14)`:`linear-gradient(135deg,#7c6fe022,#a855f714)`}}>
+        {/* Donut chart */}
+        <div style={{position:"relative",flexShrink:0}}>
+          <svg width="56" height="56" style={{transform:"rotate(-90deg)"}}>
+            <circle cx="28" cy="28" r="22" fill="none" stroke={isDark()?"rgba(255,255,255,0.07)":C.border||"#ece8ff"} strokeWidth="5"/>
+            <circle cx="28" cy="28" r="22" fill="none" stroke={`url(#pg_grad)`} strokeWidth="5"
+              strokeDasharray={`${2*Math.PI*22*totalPct/100} ${2*Math.PI*22}`} strokeLinecap="round"
+              style={{transition:"stroke-dasharray 1.2s ease"}}/>
+            <defs>
+              <linearGradient id="pg_grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor={C.cyan}/>
+                <stop offset="100%" stopColor={C.purple}/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:C.cyan}}>{totalPct}%</div>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:16,fontWeight:900,color:textColor()}}>Lesson Progress</div>
+          <div style={{fontSize:12,color:C.dim,marginTop:2}}>{total} of {max} sets done</div>
+          {/* Mini lesson dots */}
+          <div style={{display:"flex",gap:4,marginTop:6,flexWrap:"wrap"}}>
+            {lessons.map((l,i)=>{
+              const d=setsDone(l.id), p=Math.round(d/20*100);
+              const col=COLORS[i%COLORS.length];
+              return <div key={l.id} title={`${l.title}: ${p}%`} style={{width:20,height:6,borderRadius:3,background:p===100?col:p>0?`${col}88`:isDark()?"rgba(255,255,255,0.1)":C.border||"#ddd",transition:"background 0.4s"}}/>;
+            })}
           </div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{position:"relative",width:44,height:44}}>
-            <svg width="44" height="44" style={{transform:"rotate(-90deg)"}}>
-              <circle cx="22" cy="22" r="16" fill="none" stroke="#ffffff0a" strokeWidth="4"/>
-              <circle cx="22" cy="22" r="16" fill="none" stroke={C.cyan} strokeWidth="4"
-                strokeDasharray={`${2*Math.PI*16*totalPct/100} ${2*Math.PI*16}`} strokeLinecap="round"
-                style={{transition:"stroke-dasharray 1s ease"}}/>
-            </svg>
-            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:C.cyan}}>{totalPct}%</div>
-          </div>
-          <span style={{color:C.dim,fontSize:16}}>{open?"▲":"▼"}</span>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <div style={{background:open?C.cyan:isDark()?"rgba(255,255,255,0.08)":C.border||"#ece8ff",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:800,color:open?"white":C.dim,transition:"all 0.2s"}}>{open?"Hide":"Show"}</div>
         </div>
       </div>
-      <div style={{padding:"0 18px 2px"}}>
-        <div style={{background:isDark()?"rgba(255,255,255,0.06)":"rgba(124,111,224,0.06)",borderRadius:8,height:6,overflow:"hidden"}}>
-          <div style={{width:`${totalPct}%`,height:"100%",background:`linear-gradient(90deg,${C.cyan},${C.purple})`,borderRadius:8,transition:"width 1s ease",boxShadow:`0 0 8px ${C.cyan}55`}}/>
+
+      {/* Collapsed summary bar */}
+      <div style={{padding:"0 18px 4px",background:C.card}}>
+        <div style={{background:isDark()?"rgba(255,255,255,0.07)":C.border||"#ece8ff",borderRadius:20,height:8,overflow:"hidden"}}>
+          <div style={{width:`${totalPct}%`,height:"100%",background:`linear-gradient(90deg,${C.cyan},${C.purple})`,borderRadius:20,transition:"width 1.2s ease",boxShadow:`0 0 8px ${C.cyan}55`}}/>
         </div>
       </div>
+
+      {/* Expanded — horizontal scrolling cards */}
       {open && (
-        <div style={{padding:"12px 18px 18px"}}>
-          {lessons.map((l,i)=>{
-            const done=setsDone(l.id), pct=Math.round(done/20*100);
-            const complete=done===20, started=done>0;
-            return (
-              <div key={l.id} style={{marginBottom:14,background:complete?`${C.green}0a`:started?`${C.purple}0a`:"transparent",borderRadius:16,padding:"12px 14px",border:`1px solid ${complete?C.green+"33":started?C.purple+"22":"transparent"}`,transition:"all 0.3s"}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                  <div style={{position:"relative",flexShrink:0}}>
-                    <svg width="40" height="40" style={{transform:"rotate(-90deg)"}}>
-                      <circle cx="20" cy="20" r="15" fill="none" stroke="#ffffff0a" strokeWidth="3"/>
-                      <circle cx="20" cy="20" r="15" fill="none"
-                        stroke={complete?C.green:started?C.cyan:"transparent"} strokeWidth="3"
-                        strokeDasharray={`${2*Math.PI*15*pct/100} ${2*Math.PI*15}`} strokeLinecap="round"
-                        style={{transition:"stroke-dasharray 0.8s ease"}}/>
-                    </svg>
-                    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>{complete?"⭐":l.emoji}</div>
+        <div style={{background:C.card,padding:"14px 0 18px"}}>
+          <div style={{overflowX:"auto",paddingBottom:8}}>
+            <div style={{display:"flex",gap:12,padding:"0 18px",minWidth:"max-content"}}>
+              {lessons.map((l,i)=>{
+                const done=setsDone(l.id), pct=Math.round(done/20*100);
+                const col=COLORS[i%COLORS.length];
+                const complete=done===20, started=done>0;
+                return (
+                  <div key={l.id} style={{
+                    background:complete?`linear-gradient(145deg,${col}22,${col}0a)`:started?`${col}10`:isDark()?"rgba(255,255,255,0.03)":C.border||"#f5f0ff",
+                    border:`2px solid ${complete?col+"66":started?col+"33":isDark()?"rgba(255,255,255,0.08)":C.border||"#ddd"}`,
+                    borderRadius:20, padding:"14px 12px", width:130, flexShrink:0,
+                    boxShadow:complete?`0 4px 16px ${col}33`:"none",
+                  }}>
+                    {/* Top: emoji + % */}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                      <div style={{fontSize:26}}>{complete?"⭐":started?l.emoji:"🔒"}</div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:18,fontWeight:900,color:complete?col:started?col:C.dim}}>{pct}%</div>
+                        {complete&&<div style={{fontSize:9,color:col,fontWeight:800}}>DONE!</div>}
+                      </div>
+                    </div>
+                    {/* Lesson name */}
+                    <div style={{fontSize:12,fontWeight:900,color:textColor(),marginBottom:4,lineHeight:1.3,overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>L{i+1}: {l.title}</div>
+                    <div style={{fontSize:10,color:C.dim,marginBottom:8}}>{done}/20 sets</div>
+                    {/* Arc progress bar */}
+                    <div style={{background:isDark()?"rgba(255,255,255,0.07)":C.border||"#ece8ff",borderRadius:20,height:6,overflow:"hidden"}}>
+                      <div style={{width:`${pct}%`,height:"100%",background:complete?`linear-gradient(90deg,${col},${col}aa)`:`linear-gradient(90deg,${col},${col}88)`,borderRadius:20,transition:"width 0.8s ease",boxShadow:started?`0 0 6px ${col}66`:"none"}}/>
+                    </div>
+                    {/* 20 dot grid */}
+                    <div style={{display:"flex",gap:2,flexWrap:"wrap",marginTop:8}}>
+                      {Array.from({length:20},(_,si)=>{
+                        const s=progress.find(p=>p.lesson_id===`${l.id}_s${si}`)?.stars_earned||0;
+                        const done2=progress.some(p=>p.lesson_id===`${l.id}_s${si}`&&(p.stars_earned||0)>=1);
+                        return <div key={si} style={{width:8,height:8,borderRadius:2,background:done2?(s>=3?C.yellow:s>=2?C.green:col):isDark()?"rgba(255,255,255,0.08)":C.border||"#ddd",flexShrink:0}}/>;
+                      })}
+                    </div>
                   </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:15,fontWeight:800,color:complete?C.green:started?"white":C.dim}}>L{i+1}: {l.title}</div>
-                    <div style={{fontSize:11,color:C.dim,marginTop:2}}>{done}/20 sets</div>
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:20,fontWeight:900,color:complete?C.green:started?C.cyan:C.dim}}>{pct}%</div>
-                    {complete&&<div style={{fontSize:10,color:C.green,fontWeight:700}}>Done! 🏆</div>}
-                  </div>
-                </div>
-                <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
-                  {Array.from({length:20},(_,si)=>{
-                    const isDone=progress.some(p=>p.lesson_id===`${l.id}_s${si}`&&(p.stars_earned||0)>=1);
-                    const stars=progress.find(p=>p.lesson_id===`${l.id}_s${si}`)?.stars_earned||0;
-                    return <div key={si} style={{width:11,height:11,borderRadius:3,background:isDone?(stars>=3?C.yellow:stars>=2?C.green:C.cyan):"rgba(255,255,255,0.08)",boxShadow:isDone?`0 0 5px ${stars>=3?C.yellow:C.cyan}88`:"none",transition:"all 0.3s",flexShrink:0}}/>;
-                  })}
-                </div>
-                <div style={{display:"flex",gap:10,marginTop:6,fontSize:10,color:C.dim,flexWrap:"wrap"}}>
-                  <span>🟡 3★ Perfect</span><span>🟢 2★ Good</span><span>🔵 1★ Done</span><span style={{opacity:0.5}}>⬜ Not done</span>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
+          {/* Legend */}
+          <div style={{display:"flex",gap:14,padding:"8px 18px 0",fontSize:10,color:C.dim}}>
+            <span>🟡 3★</span><span>🟢 2★</span><span>🔵 1★ done</span><span style={{opacity:0.5}}>⬜ not yet</span>
+          </div>
         </div>
       )}
     </div>
@@ -3563,6 +3589,39 @@ function ThemeSelector({ onClose }) {
   );
 }
 
+function WorldsSection({ WORLDS, child, onWorld }) {
+  const [open, setOpen] = React.useState(false);
+  const others = WORLDS.filter(cw => cw.id !== parseInt(child.class_num||1));
+  return (
+    <div style={{ position:"relative", zIndex:2, margin:"14px 18px 0" }}>
+      <button onClick={()=>setOpen(o=>!o)}
+        style={{ width:"100%", background:isDark()?`linear-gradient(135deg,${C.purple}18,${C.cyan}0a)`:C.card, border:`1.5px solid ${C.purple}${isDark()?"33":"44"}`, borderRadius:18, padding:"14px 18px", cursor:"pointer", display:"flex", alignItems:"center", gap:12, textAlign:"left", boxShadow:`0 2px 10px ${C.purple}10` }}>
+        <div style={{ fontSize:26 }}>🌌</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:15, fontWeight:900, color:textColor() }}>Explore Other Worlds</div>
+          <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>{others.length} worlds · Unlock any lesson for ₹300</div>
+        </div>
+        <div style={{ background:open?C.purple:"transparent", border:`1.5px solid ${C.purple}44`, borderRadius:10, padding:"5px 12px", fontSize:13, fontWeight:800, color:open?"white":C.purple, transition:"all 0.2s" }}>{open?"▲":"▼"}</div>
+      </button>
+      {open && (
+        <div style={{ marginTop:10, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          {others.map(cw=>(
+            <button key={cw.id} onClick={()=>onWorld(cw)}
+              style={{ background:isDark()?`linear-gradient(135deg,${cw.color}14,rgba(10,10,28,0.9))`:C.card, border:`2px solid ${cw.color}44`, borderRadius:18, padding:"16px 12px", cursor:"pointer", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:4, boxShadow:`0 2px 14px ${cw.color}18`, transition:"all 0.2s" }}>
+              <div style={{ fontSize:34, marginBottom:2 }}>{cw.planet}</div>
+              <div style={{ fontSize:13, fontWeight:900, color:cw.color }}>{cw.name}</div>
+              <div style={{ fontSize:11, color:C.dim }}>{cw.world}</div>
+              <div style={{ background:`${C.orange}22`, border:`1px solid ${C.orange}33`, borderRadius:10, padding:"3px 10px", marginTop:4 }}>
+                <span style={{ fontSize:11, color:C.orange, fontWeight:800 }}>🔒 ₹300/lesson</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogout, onFeedback, onRate, onSettings, isLessonPurchased }) {
   const [showTutorial, setShowTutorial] = useState(()=>!localStorage.getItem('mm_tutorial_done'));
   const doneTutorial = () => { localStorage.setItem('mm_tutorial_done','1'); setShowTutorial(false); };
@@ -3759,27 +3818,11 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
         </div>
       </div>
 
-      {/* Other Worlds — ALL classes */}
-      <div style={{ position:"relative", zIndex:2, margin:"14px 18px 0" }}>
-        <div style={{ fontSize:16, fontWeight:900, color:textColor(), marginBottom:10 }}>🌌 Explore Other Worlds</div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-          {WORLDS.filter(cw=>cw.id!==parseInt(child.class_num||1)).map(cw=>(
-            <button key={cw.id} onClick={()=>onWorld(cw)}
-              style={{ background:`linear-gradient(135deg,${cw.color}12,isDark()?"rgba(10,10,28,0.9)":C.card)`, border:`2px solid ${cw.color}${isDark()?'33':'44'}`, borderRadius:20, padding:"16px 12px", cursor:"pointer", textAlign:"center", opacity:isDark()?0.82:0.9, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-              <div style={{ fontSize:30 }}>{cw.planet}</div>
-              <div style={{ fontSize:13, fontWeight:800, color:cw.color }}>{cw.name}</div>
-              <div style={{ fontSize:10, color:C.dim }}>{cw.world}</div>
-              <div style={{ background:`${C.orange}22`, borderRadius:8, padding:"3px 8px", marginTop:2 }}>
-                <div style={{ fontSize:10, color:C.orange, fontWeight:700 }}>🔒 ₹300/lesson</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Other Worlds — collapsible */}
+      <WorldsSection WORLDS={WORLDS} child={child} onWorld={onWorld}/>
 
       {/* Progress Grid */}
       <div style={{ position:"relative", zIndex:2, margin:"14px 18px 0" }}>
-        <div style={{ fontSize:16, fontWeight:900, color:textColor(), marginBottom:10 }}>📈 Lesson Progress</div>
         <ProgressGrid lessons={LESSONS[child.class_num]||LESSONS[1]} progress={progress}/>
       </div>
 
@@ -3807,127 +3850,82 @@ function Home({ child, onWorld, onAbacus, onGames, onOlympiad, onParent, onLogou
 // ── Lessons ───────────────────────────────────────────────────────────
 function SetPathMap({ lesson, world, progress, onLesson, onBack, isSetDone, isSetUnlocked, completedSets }) {
   const cSets = completedSets(lesson.id);
-  // Duolingo-style zigzag: positions alternate left-center-right
-  const cols = [2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1]; // 1=left,2=center,3=right
-  const colPx = { 1: "18%", 2: "50%", 3: "82%" };
+  const CHEST_SETS = [4, 9, 14, 19];
   const EMOJIS = ["🌟","🎯","🚀","⭐","🏆","💡","🎮","🔥","💫","✨","🎪","🌈","🎓","🧠","⚡","🎁","🏅","🌙","🪄","👑"];
-  const CHEST_SETS = [4, 9, 14, 19]; // treasure chests every 5
+  const groups = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19]];
+  const GROUP_NAMES = ["Starter","Explorer","Champion","Master"];
+  const GROUP_ICONS = ["🌱","🔭","🏆","👑"];
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Baloo 2','Nunito',sans-serif", position:"relative", overflowX:"hidden" }}>
-      {/* Header */}
-      <div style={{ position:"sticky", top:0, zIndex:10, background:C.card, borderBottom:`3px solid ${world.color}44`, padding:"14px 18px", display:"flex", alignItems:"center", gap:12, boxShadow:`0 2px 12px ${world.color}22` }}>
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"'Baloo 2','Nunito',sans-serif",paddingBottom:40}}>
+      {/* Sticky header */}
+      <div style={{position:"sticky",top:0,zIndex:10,background:C.card,borderBottom:`3px solid ${world.color}55`,padding:"14px 18px",display:"flex",alignItems:"center",gap:12,boxShadow:`0 2px 16px ${world.color}22`}}>
         <BackBtn onClick={onBack} color={world.color}/>
-        <div style={{ width:44, height:44, borderRadius:14, background:`linear-gradient(135deg,${world.color},${world.color}99)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, boxShadow:`0 0 14px ${world.color}55`, flexShrink:0 }}>{lesson.emoji}</div>
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:11, color:world.color, fontWeight:900, letterSpacing:2, textTransform:"uppercase" }}>Lesson {lesson._li+1}</div>
-          <div style={{ fontSize:16, fontWeight:900, color:textColor() }}>{lesson.title}</div>
-          <div style={{ fontSize:11, color:C.dim }}>{lesson.sub}</div>
+        <div style={{width:46,height:46,borderRadius:14,background:`linear-gradient(135deg,${world.color},${world.color}99)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{lesson.emoji}</div>
+        <div style={{flex:1}}>
+          <div style={{fontSize:11,color:world.color,fontWeight:900,letterSpacing:2}}>LESSON {lesson._li+1}</div>
+          <div style={{fontSize:16,fontWeight:900,color:textColor()}}>{lesson.title}</div>
         </div>
-        <div style={{ textAlign:"right" }}>
-          <div style={{ fontSize:20, fontWeight:900, color:world.color }}>{cSets}<span style={{ fontSize:11, color:C.dim }}>/20</span></div>
-          <div style={{ fontSize:10, color:C.dim }}>sets done</div>
+        <div style={{background:`linear-gradient(135deg,${world.color},${world.color}99)`,borderRadius:14,padding:"6px 12px",textAlign:"center"}}>
+          <div style={{fontSize:18,fontWeight:900,color:"white"}}>{cSets}/20</div>
+          <div style={{fontSize:9,color:"rgba(255,255,255,0.7)"}}>SETS</div>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div style={{ padding:"10px 18px 0" }}>
-        <div style={{ background:isDark()?"rgba(255,255,255,0.08)":C.border||"#ece8ff", borderRadius:20, height:10, overflow:"hidden" }}>
-          <div style={{ width:`${(cSets/20)*100}%`, height:"100%", background:`linear-gradient(90deg,${world.color},${C.cyan})`, borderRadius:20, transition:"width 0.6s ease", boxShadow:`0 0 8px ${world.color}66` }}/>
+      {/* Overall progress bar */}
+      <div style={{padding:"12px 18px 0"}}>
+        <div style={{background:isDark()?"rgba(255,255,255,0.08)":C.border||"#ece8ff",borderRadius:20,height:12,overflow:"hidden"}}>
+          <div style={{width:`${(cSets/20)*100}%`,height:"100%",background:`linear-gradient(90deg,${world.color},${C.cyan})`,borderRadius:20,transition:"width 0.6s ease",boxShadow:`0 0 10px ${world.color}66`}}/>
         </div>
-        <div style={{ fontSize:11, color:C.dim, marginTop:4, textAlign:"center" }}>{cSets}/20 sets complete — keep going! 🚀</div>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:11,color:C.dim}}>
+          <span>{cSets} complete</span><span>{20-cSets} remaining</span>
+        </div>
       </div>
 
-      {/* Path map */}
-      <div style={{ position:"relative", padding:"20px 0 60px", minHeight: 20*110+"px" }}>
-        {Array.from({length:20}, (_,si) => {
-          const sDone   = isSetDone(lesson.id, si);
-          const sUnlock = isSetUnlocked(lesson.id, si);
-          const isChest = CHEST_SETS.includes(si);
-          const isCurrent = !sDone && sUnlock;
-          const col = cols[si];
-          const nextCol = cols[si+1] || col;
-          const left = colPx[col];
-          const top = si * 120 + 30;
-          const doneLine = sDone && si<19 && (isSetDone(lesson.id,si+1)||(!isSetDone(lesson.id,si+1)&&isSetUnlocked(lesson.id,si+1)));
-          const lineColor = doneLine ? world.color : isDark() ? "rgba(255,255,255,0.08)" : "#ddd8f8";
-
-          // Arrow SVG connecting this node to next - follows zigzag direction
-          const nodeSize = isCurrent ? 76 : isChest ? 68 : 64;
-          const nodeR = nodeSize/2;
-
+      {/* Groups of 5 sets */}
+      <div style={{padding:"16px 18px",display:"flex",flexDirection:"column",gap:16}}>
+        {groups.map((group,gi)=>{
+          const groupDone = group.filter(si=>isSetDone(lesson.id,si)).length;
+          const groupUnlocked = group.some(si=>isSetUnlocked(lesson.id,si));
           return (
-            <div key={si} style={{ position:"absolute", left, top, transform:"translateX(-50%)", zIndex:2, display:"flex", flexDirection:"column", alignItems:"center" }}>
-              {/* Curved arrow to next node */}
-              {si < 19 && (() => {
-                const curX = col===1?0.18:col===2?0.50:0.82;
-                const nxtX = nextCol===1?0.18:nextCol===2?0.50:0.82;
-                const W=320, H=120;
-                const x1=curX*W, y1=nodeR+4, x2=nxtX*W, y2=H-20;
-                const cx=(x1+x2)/2, cy=(y1+y2)/2 - (col!==nextCol?20:0);
-                const arrowLen=10;
-                // arrow head at target
-                const ang=Math.atan2(y2-(cy+(cy-y1)*0.1), x2-(cx+(cx-x1)*0.1));
-                const ax1=x2-arrowLen*Math.cos(ang-0.4), ay1=y2-arrowLen*Math.sin(ang-0.4);
-                const ax2=x2-arrowLen*Math.cos(ang+0.4), ay2=y2-arrowLen*Math.sin(ang+0.4);
-                return (
-                  <svg style={{position:"absolute",top:nodeR-4,left:`${(0.5-curX)*-W}px`,width:W,height:H,zIndex:0,pointerEvents:"none",overflow:"visible"}} viewBox={`0 0 ${W} ${H}`}>
-                    <defs>
-                      <marker id={`arr${si}`} markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-                        <path d="M0,0 L0,6 L8,3 z" fill={lineColor}/>
-                      </marker>
-                    </defs>
-                    <path d={`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`}
-                      fill="none" stroke={lineColor} strokeWidth={doneLine?4:3}
-                      strokeDasharray={doneLine?"none":"6,5"}
-                      markerEnd={`url(#arr${si})`}
-                      strokeLinecap="round"/>
-                  </svg>
-                );
-              })()}
-              {/* The node button */}
-              <button
-                onClick={() => { if(sUnlock){ SFX.unlock(); onLesson({...lesson, setIndex:si, _progress:progress}); } else SFX.wrong(); }}
-                style={{
-                  width: isCurrent ? 76 : isChest ? 68 : 64,
-                  height: isCurrent ? 76 : isChest ? 68 : 64,
-                  borderRadius:"50%",
-                  border: isCurrent ? `4px solid ${world.color}` : sDone ? `3px solid ${world.color}` : `3px solid ${isDark()?"rgba(255,255,255,0.15)":C.border||"#ddd"}`,
-                  background: sDone
-                    ? `linear-gradient(135deg,${world.color},${world.color}bb)`
-                    : isCurrent
-                      ? `linear-gradient(135deg,${world.color}22,${world.color}11)`
-                      : isDark() ? "rgba(255,255,255,0.04)" : "#f5f0ff",
-                  cursor: sUnlock ? "pointer" : "not-allowed",
-                  display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                  boxShadow: isCurrent
-                    ? `0 0 0 6px ${world.color}33, 0 4px 20px ${world.color}55`
-                    : sDone
-                      ? `0 4px 16px ${world.color}55`
-                      : "none",
-                  animation: isCurrent ? "heartbeat 1.5s ease-in-out infinite" : "none",
-                  transition:"all 0.2s",
-                  opacity: sUnlock ? 1 : 0.35,
-                  position:"relative",
-                  zIndex:2,
-                }}>
-                {isChest && !sDone && sUnlock ? (
-                  <span style={{ fontSize:30 }}>🎁</span>
-                ) : sDone ? (
-                  <span style={{ fontSize:28 }}>⭐</span>
-                ) : sUnlock ? (
-                  <span style={{ fontSize:26 }}>{EMOJIS[si % EMOJIS.length]}</span>
-                ) : (
-                  <span style={{ fontSize:24 }}>🔒</span>
-                )}
-                {isCurrent && (
-                  <div style={{ position:"absolute", top:-8, left:"50%", transform:"translateX(-50%)", background:world.color, color:"white", fontSize:9, fontWeight:900, borderRadius:10, padding:"2px 7px", whiteSpace:"nowrap", fontFamily:"'Orbitron',sans-serif" }}>START</div>
-                )}
-              </button>
-              {/* Set label below */}
-              <div style={{ marginTop:6, textAlign:"center" }}>
-                <div style={{ fontSize:11, fontWeight:900, color: sDone ? world.color : isCurrent ? world.color : C.dim, fontFamily:"'Orbitron',sans-serif" }}>Set {si+1}</div>
-                {sDone && <div style={{ fontSize:9, color:C.green }}>✓ Done</div>}
+            <div key={gi} style={{background:C.card,borderRadius:22,border:`1.5px solid ${groupDone===5?world.color+"55":groupUnlocked?world.color+"22":isDark()?"rgba(255,255,255,0.06)":C.border||"#ddd"}`,overflow:"hidden",boxShadow:groupDone===5?`0 4px 18px ${world.color}22`:"none"}}>
+              {/* Group header */}
+              <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:groupDone===5?`linear-gradient(135deg,${world.color}22,${world.color}0a)`:groupUnlocked?`${world.color}0a`:"transparent"}}>
+                <div style={{fontSize:26}}>{GROUP_ICONS[gi]}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:14,fontWeight:900,color:groupDone===5?world.color:groupUnlocked?textColor():C.dim}}>{GROUP_NAMES[gi]} — Sets {group[0]+1}–{group[4]+1}</div>
+                  <div style={{fontSize:11,color:C.dim,marginTop:2}}>{groupDone}/5 complete</div>
+                </div>
+                {groupDone===5&&<div style={{fontSize:20}}>✅</div>}
+              </div>
+              {/* 5 set cards in a row */}
+              <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8,padding:"8px 12px 14px"}}>
+                {group.map(si=>{
+                  const sDone=isSetDone(lesson.id,si);
+                  const sUnlock=isSetUnlocked(lesson.id,si);
+                  const isCurrent=!sDone&&sUnlock;
+                  const isChest=CHEST_SETS.includes(si);
+                  return (
+                    <button key={si}
+                      onClick={()=>{if(sUnlock){SFX.unlock();onLesson({...lesson,setIndex:si,_progress:progress});}else SFX.wrong();}}
+                      style={{
+                        background:sDone?`linear-gradient(135deg,${world.color},${world.color}99)`:isCurrent?`linear-gradient(135deg,${world.color}22,${world.color}11)`:isDark()?"rgba(255,255,255,0.04)":"#f5f0ff",
+                        border:`2px solid ${sDone?world.color:isCurrent?world.color+"88":isDark()?"rgba(255,255,255,0.1)":C.border||"#ddd"}`,
+                        borderRadius:14, padding:"10px 4px", cursor:sUnlock?"pointer":"not-allowed",
+                        textAlign:"center", opacity:sUnlock?1:0.35,
+                        boxShadow:isCurrent?`0 0 0 4px ${world.color}33, 0 4px 14px ${world.color}44`:sDone?`0 3px 10px ${world.color}44`:"none",
+                        animation:isCurrent?"heartbeat 1.5s ease-in-out infinite":"none",
+                        transition:"all 0.2s",
+                      }}>
+                      <div style={{fontSize:isChest?22:sDone?20:isCurrent?20:18,marginBottom:3}}>
+                        {isChest&&!sDone&&sUnlock?"🎁":sDone?"⭐":isCurrent?EMOJIS[si%EMOJIS.length]:"🔒"}
+                      </div>
+                      <div style={{fontSize:9,fontWeight:900,fontFamily:"'Orbitron',sans-serif",color:sDone?"white":isCurrent?world.color:C.dim}}>S{si+1}</div>
+                      {isCurrent&&<div style={{fontSize:8,color:world.color,fontWeight:700,marginTop:1}}>TAP!</div>}
+                      {sDone&&<div style={{fontSize:8,color:"rgba(255,255,255,0.7)",marginTop:1}}>✓</div>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
@@ -3936,7 +3934,6 @@ function SetPathMap({ lesson, world, progress, onLesson, onBack, isSetDone, isSe
     </div>
   );
 }
-
 function LessonMap({ world, child, onBack, onLesson, isLessonPurchased, onPurchaseLesson }) {
   const [progress,    setProgress]    = useState([]);
   const [activeLesson, setActiveLesson] = useState(null); // when set → show SetPathMap
@@ -5821,8 +5818,8 @@ function DailyQuiz({ child, onClose }) {
   };
 
   return (
-    <div style={{position:"fixed",inset:0,background:isDark()?"rgba(4,4,15,0.92)":"rgba(100,80,200,0.22)",backdropFilter:"blur(14px)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",fontFamily:"'Baloo 2','Nunito',sans-serif"}}>
-      <div style={{background:C.card,borderRadius:"28px 28px 0 0",padding:"0 0 30px",maxWidth:480,width:"100%",border:`2px solid ${C.yellow}44`,borderBottom:"none",boxShadow:`0 -8px 40px ${C.yellow}22`,maxHeight:"92vh",overflowY:"auto",animation:"slideUp 0.3s ease"}}>
+    <div style={{position:"fixed",inset:0,background:isDark()?"rgba(4,4,15,0.92)":"rgba(100,80,200,0.22)",backdropFilter:"blur(14px)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",fontFamily:"'Baloo 2','Nunito',sans-serif"}}>
+      <div style={{background:C.card,borderRadius:24,padding:"0 0 24px",maxWidth:460,width:"100%",border:`2px solid ${C.yellow}44`,boxShadow:`0 8px 48px ${C.yellow}22`,maxHeight:"90vh",overflowY:"auto",animation:"popIn 0.3s ease"}}>
         <div style={{display:"flex",justifyContent:"center",paddingTop:12,marginBottom:4}}>
           <div style={{width:44,height:5,borderRadius:10,background:isDark()?"rgba(255,255,255,0.15)":C.border||"#dde"}}/>
         </div>
@@ -5941,8 +5938,8 @@ function DailyPuzzle({ child, onClose }) {
   const typeColors = { riddle:C.purple, number:C.cyan, logic:C.orange, visual:C.yellow };
 
   return (
-    <div style={{position:"fixed",inset:0,background:isDark()?"rgba(4,4,15,0.92)":"rgba(100,80,200,0.22)",backdropFilter:"blur(14px)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center",fontFamily:"'Baloo 2','Nunito',sans-serif"}}>
-      <div style={{background:C.card,borderRadius:"28px 28px 0 0",padding:"0 0 30px",maxWidth:480,width:"100%",border:`2px solid ${C.purple}44`,borderBottom:"none",boxShadow:`0 -8px 40px ${C.purple}22`,maxHeight:"92vh",overflowY:"auto",animation:"slideUp 0.3s ease"}}>
+    <div style={{position:"fixed",inset:0,background:isDark()?"rgba(4,4,15,0.92)":"rgba(100,80,200,0.22)",backdropFilter:"blur(14px)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",fontFamily:"'Baloo 2','Nunito',sans-serif"}}>
+      <div style={{background:C.card,borderRadius:24,padding:"0 0 24px",maxWidth:460,width:"100%",border:`2px solid ${C.purple}44`,boxShadow:`0 8px 48px ${C.purple}22`,maxHeight:"90vh",overflowY:"auto",animation:"popIn 0.3s ease"}}>
         <div style={{display:"flex",justifyContent:"center",paddingTop:12,marginBottom:4}}>
           <div style={{width:44,height:5,borderRadius:10,background:isDark()?"rgba(255,255,255,0.15)":C.border||"#dde"}}/>
         </div>
