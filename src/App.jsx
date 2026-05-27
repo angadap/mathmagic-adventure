@@ -1,7 +1,7 @@
-import AdventureMap from './screens/AdventureMap'
+import BossBattle from './screens/BossBattle'
 
 function App() {
-  return <AdventureMap />
+  return <BossBattle />
 }
 
 export default App
