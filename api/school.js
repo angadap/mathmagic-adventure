@@ -434,7 +434,7 @@ export default async function handler(req, res) {
       const { randomBytes } = await import("crypto");
       const session_token = randomBytes(32).toString("hex");
       await sb("teachers","PATCH",{session_token},`?id=eq.${t.id}`);
-      return res.status(200).json({teacher:{id:t.id,name:t.name,email:t.email,school_id:t.school_id},session_token});
+      return res.status(200).json({teacher:{id:t.id,name:t.name,email:t.email,school_id:t.school_id,permissions:Array.isArray(t.permissions)?t.permissions:[]},session_token});
     }
 
     // ══════════════════════════════════════════════════════
@@ -444,7 +444,7 @@ export default async function handler(req, res) {
     async function verifyTeacher(teacher_id, session_token) {
       if (!isUUID(teacher_id)||!session_token) return null;
       const r = await sb("teachers","GET",null,
-        `?id=eq.${teacher_id}&session_token=eq.${encodeURIComponent(session_token)}&is_active=eq.true&select=id,school_id,name,email&limit=1`);
+        `?id=eq.${teacher_id}&session_token=eq.${encodeURIComponent(session_token)}&is_active=eq.true&select=id,school_id,name,email,permissions&limit=1`);
       return Array.isArray(r.data)&&r.data[0] ? r.data[0] : null;
     }
 
@@ -654,6 +654,19 @@ export default async function handler(req, res) {
     if (action==="update_student_pin"||action==="delete_student"||action==="modify_student") {
       const teacher = await verifyTeacher(teacher_id, session_token);
       if (!teacher) return res.status(401).json({error:"Unauthorized"});
+      // Server-side permission enforcement
+      const tPerms = Array.isArray(teacher.permissions) ? teacher.permissions : [];
+      const hasPerms = tPerms.length > 0; // if empty array → legacy teacher, allow all
+      if (hasPerms) {
+        const PERM_MAP = {
+          "update_student_pin": "change_student_pin",
+          "delete_student":     "delete_student",
+          "modify_student":     "modify_student",
+        };
+        const required = PERM_MAP[action];
+        if (required && !tPerms.includes(required))
+          return res.status(403).json({error:`Permission denied. Your account does not have '${required}' permission.`});
+      }
       const {student_id} = req.body;
       if (!isUUID(student_id)) return res.status(400).json({error:"Invalid student_id"});
 

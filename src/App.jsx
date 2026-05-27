@@ -5863,7 +5863,7 @@ function DailyQuiz({ child, onClose }) {
                 const isCorrect = key === challenge.correct;
                 const isChosen  = key === chosen;
                 const answered  = chosen !== null;
-                let bg=C.card2, border="#181838", color="white";
+                let bg=isDark()?C.card2:"#ffffff", border=isDark()?"#181838":C.border||"#d0c8f8", color=textColor();
                 if (answered) {
                   if (isCorrect){bg=isDark()?"#052e16":"#edfff6";border=C.green;color=isDark()?"#4ade80":"#065f46";}
                   else if(isChosen){bg=isDark()?"#2d0a0a":"#fff1f1";border=C.red;color=isDark()?"#f87171":"#991b1b";}
@@ -6609,23 +6609,28 @@ function StudentActions({ student, teacher, onRefresh, onClose }) {
     </div>
   );
 
-  const noPerms = !Array.isArray(teacher?.permissions) || teacher.permissions.length === 0;
+  // noPerms = true means teacher has NO permissions array set (legacy teacher — allow all)
+  // Empty array [] means read-only (admin explicitly set no permissions)
+  const noPerms = !Array.isArray(teacher?.permissions);
+  const readOnly = Array.isArray(teacher?.permissions) && teacher.permissions.length === 0;
   return (
     <div style={{marginTop:10,display:"flex",gap:8,flexWrap:"wrap"}}>
-      {(hasPerm("view_analytics")||noPerms) && (
+      {/* Progress: always show if no perm array, or if view_analytics granted */}
+      {(noPerms || hasPerm("view_analytics")) && (
         <button onClick={loadProgress} style={{background:`${C.cyan}22`,border:`1px solid ${C.cyan}44`,borderRadius:8,padding:"6px 10px",color:C.cyan,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>📊 Progress</button>
       )}
-      {hasPerm("change_student_pin") && (
+      {/* Actions: only show if legacy teacher (noPerms) OR specific permission granted */}
+      {(noPerms || hasPerm("change_student_pin")) && (
         <button onClick={()=>setView("pin")} style={{background:`${C.yellow}22`,border:`1px solid ${C.yellow}44`,borderRadius:8,padding:"6px 10px",color:C.yellow,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>🔑 Change PIN</button>
       )}
-      {hasPerm("modify_student") && (
+      {(noPerms || hasPerm("modify_student")) && (
         <button onClick={()=>setView("modify")} style={{background:`${C.purple}22`,border:`1px solid ${C.purple}44`,borderRadius:8,padding:"6px 10px",color:C.purple,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>✏️ Modify</button>
       )}
-      {hasPerm("delete_student") && (
+      {(noPerms || hasPerm("delete_student")) && (
         <button onClick={deleteStudent} style={{background:`${C.red}22`,border:`1px solid ${C.red}44`,borderRadius:8,padding:"6px 10px",color:C.red,cursor:"pointer",fontSize:11,fontFamily:"'Nunito',sans-serif"}}>🗑 Delete</button>
       )}
-      {!noPerms && !hasPerm("modify_student") && !hasPerm("delete_student") && !hasPerm("change_student_pin") && !hasPerm("view_analytics") && (
-        <div style={{color:C.dim,fontSize:12,padding:"6px 10px"}}>👁 View only — no actions permitted</div>
+      {readOnly && (
+        <div style={{color:C.dim,fontSize:12,padding:"6px 10px",background:isDark()?"rgba(255,255,255,0.04)":"#f5f0ff",borderRadius:8}}>👁 View only — no actions permitted</div>
       )}
     </div>
   );
@@ -8163,7 +8168,7 @@ export default function App() {
   if (screen === "feedback") return <><GlobalStyles/><FeedbackScreen child={child} currentScreen={prevScreen} prefillCategory={feedbackPrefill} onBack={() => setScreen(prevScreen)}/></>;
   if (screen === "games")    return <><GlobalStyles/><GamesHub child={child} onBack={() => setScreen("home")}/></>;
   if (screen === "student_login") return <><GlobalStyles/><StudentLogin onBack={()=>setScreen("student_entry")} onDone={(s)=>{setSchoolStudent(s);setChild({...s,id:s.id,name:s.name,avatar:"🧒",class_num:s.class_num,xp:s.xp||0,coins:s.coins||0,level:s.level||1,streak_days:s.streak_days||0,is_school_student:true});setScreen("home");}}/></>;
-  if (screen === "teacher_login") return <><GlobalStyles/><TeacherLogin onBack={()=>setScreen("entry")} onDone={(t)=>{setTeacher(t);localStorage.setItem("mm_teacher_session",JSON.stringify(t));setScreen("teacher_dash");}}/></>;
+  if (screen === "teacher_login") return <><GlobalStyles/><TeacherLogin onBack={()=>setScreen("entry")} onDone={(t)=>{ const tObj={...t, permissions:Array.isArray(t.permissions)?t.permissions:[]}; setTeacher(tObj); localStorage.setItem("mm_teacher_session",JSON.stringify(tObj)); setScreen("teacher_dash"); }}/></>;
   if (screen === "teacher_dash")  return <><GlobalStyles/><TeacherDashboard teacher={teacher} onLogout={()=>{setTeacher(null);setScreen("entry");}}/></>;
   if (screen === "admin_panel")   return <><GlobalStyles/><AdminPanel onBack={()=>setScreen("entry")}/></>;
   if (screen === "privacy")    return <><GlobalStyles/><PrivacyPolicy  onBack={()=>setScreen("settings")}/></>;
