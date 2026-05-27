@@ -1,0 +1,303 @@
+.homeScreen {
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    #090b1a 0%,
+    #12153d 40%,
+    #1c145c 100%
+  );
+  font-family: 'Poppins', sans-serif;
+  color: white;
+}
+
+.contentWrapper {
+  position: relative;
+  z-index: 2;
+  padding: 24px;
+  max-width: 430px;
+  margin: auto;
+  padding-bottom: 120px;
+}
+
+.backgroundGlow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.5;
+}
+
+.bg1 {
+  width: 300px;
+  height: 300px;
+  background: #6a38ff;
+  top: -80px;
+  left: -80px;
+}
+
+.bg2 {
+  width: 250px;
+  height: 250px;
+  background: #ff4fd8;
+  bottom: -50px;
+  right: -80px;
+}
+
+.bg3 {
+  width: 220px;
+  height: 220px;
+  background: #00e5ff;
+  top: 45%;
+  left: 40%;
+}
+
+.heroSection {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.wizardOrb {
+  width: 120px;
+  height: 120px;
+  margin: auto;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6a38ff, #ff4fd8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  box-shadow: 0 0 50px rgba(106, 56, 255, 0.7);
+}
+
+.title {
+  font-size: 52px;
+  font-weight: 900;
+  margin-top: 20px;
+  background: linear-gradient(to right, #ffffff, #00e5ff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.academyText {
+  letter-spacing: 6px;
+  color: #a9b0ff;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.subtitle {
+  margin-top: 16px;
+  color: #d4d8ff;
+  font-size: 15px;
+}
+
+.xpCard {
+  margin-top: 30px;
+  padding: 22px;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 40px rgba(106, 56, 255, 0.25);
+}
+
+.xpTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.smallLabel {
+  font-size: 12px;
+  color: #c9ccff;
+}
+
+.rankText {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.streakBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 145, 0, 0.15);
+  padding: 10px 14px;
+  border-radius: 18px;
+  color: #ffb74d;
+  font-weight: 700;
+}
+
+.xpBar {
+  margin-top: 20px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.xpFill {
+  width: 72%;
+  height: 100%;
+  background: linear-gradient(to right, #00e5ff, #6a38ff, #ff4fd8);
+  border-radius: 999px;
+}
+
+.xpNumbers {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #d0d4ff;
+}
+
+.rewardBanner {
+  margin-top: 24px;
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #ffb300, #ff4fd8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 0 40px rgba(255, 79, 216, 0.3);
+}
+
+.rewardTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.rewardSubtitle {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.claimButton {
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 18px;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cardsContainer {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.magicCard {
+  padding: 24px;
+  border-radius: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+}
+
+.magicCard h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.magicCard p {
+  color: #d3d6ff;
+  font-size: 14px;
+}
+
+.cardIcon {
+  font-size: 50px;
+}
+
+.purpleGlow {
+  box-shadow: 0 0 35px rgba(106, 56, 255, 0.3);
+}
+
+.redGlow {
+  box-shadow: 0 0 35px rgba(255, 77, 103, 0.3);
+}
+
+.cyanGlow {
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.3);
+}
+
+.bottomNav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 420px;
+  padding: 16px 24px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #cdd1ff;
+}
+
+.activeNav {
+  color: #00e5ff;
+}
+
+.battleButton {
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  margin-top: -50px;
+  background: linear-gradient(135deg, #6a38ff, #ff4fd8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 40px rgba(255, 79, 216, 0.5);
+}
+
+.particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  bottom: -50px;
+  font-size: 18px;
+  opacity: 0.6;
+  animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+  from {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
+}
