@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import DailyRewardPopup from '../components/rewards/DailyRewardPopup'
 
 import './HomeScreen.css'
 
@@ -35,12 +36,36 @@ const cards = [
     route: null,
     glow: 'cyanGlow',
   },
+  {
+  title: 'Magic Inventory',
+  subtitle: 'Collect magical items',
+  emoji: '🎒',
+  route: '/inventory',
+  glow: 'purpleGlow',
+},
+{
+  title: 'Magic Pets',
+  subtitle: 'Train magical companions',
+  emoji: '🐉',
+  route: '/pets',
+  glow: 'pinkGlow',
+},
+{
+  title: 'Magic Arena',
+  subtitle: 'Compete with top wizards',
+  emoji: '🏆',
+  route: '/leaderboard',
+  glow: 'purpleGlow',
+},
 ]
 
 export default function HomeScreen() {
   const navigate = useNavigate()
 
   return (
+  <>
+    <DailyRewardPopup />
+
     <div className="homeScreen">
       {/* Background Effects */}
       <div className="bgGlow glow1"></div>
@@ -145,5 +170,6 @@ export default function HomeScreen() {
         </div>
       </div>
     </div>
+    </>
   )
 }

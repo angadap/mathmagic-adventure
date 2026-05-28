@@ -88,6 +88,8 @@ const { completeWorld } =
         addXP(250)
 
         addGems(50)
+
+        completeWorld(3, 3)
       }
     } else {
       // SCREEN SHAKE

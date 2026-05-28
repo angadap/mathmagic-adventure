@@ -1,0 +1,151 @@
+.leaderboardScreen {
+  padding-top: 40px;
+}
+
+.leaderboardHeader {
+  text-align: center;
+}
+
+.leaderboardBadge {
+  display: inline-block;
+
+  padding: 10px 18px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.08);
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  font-size: 11px;
+
+  letter-spacing: 2px;
+
+  color: #cfd3ff;
+}
+
+.leaderboardHeader h1 {
+  margin-top: 22px;
+
+  font-size: 52px;
+
+  font-weight: 900;
+}
+
+.leaderboardHeader p {
+  margin-top: 16px;
+
+  color: #cfd3ff;
+
+  line-height: 1.7;
+}
+
+.topThree {
+  margin-top: 40px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.topPlayer {
+  text-align: center;
+}
+
+.rank1 {
+  border: 1px solid rgba(255,209,102,0.4);
+}
+
+.rank2 {
+  border: 1px solid rgba(115,240,255,0.3);
+}
+
+.rank3 {
+  border: 1px solid rgba(199,125,255,0.3);
+}
+
+.rankIcon {
+  margin-bottom: 14px;
+
+  color: #ffd166;
+}
+
+.topAvatar {
+  font-size: 64px;
+}
+
+.topPlayer h2 {
+  margin-top: 14px;
+
+  font-size: 28px;
+
+  font-weight: 800;
+}
+
+.topPlayer p {
+  margin-top: 8px;
+
+  color: #cfd3ff;
+}
+
+.topScore {
+  margin-top: 18px;
+
+  font-size: 24px;
+
+  font-weight: 900;
+
+  color: #73f0ff;
+}
+
+.leaderboardList {
+  margin-top: 36px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.leaderboardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leftPlayer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.playerRank {
+  font-size: 18px;
+
+  font-weight: 900;
+
+  color: #ffd166;
+}
+
+.playerAvatar {
+  font-size: 36px;
+}
+
+.leftPlayer h3 {
+  font-size: 20px;
+
+  font-weight: 800;
+}
+
+.leftPlayer p {
+  margin-top: 4px;
+
+  color: #cfd3ff;
+}
+
+.playerXP {
+  font-size: 22px;
+
+  font-weight: 900;
+
+  color: #73f0ff;
+}

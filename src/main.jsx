@@ -9,6 +9,15 @@ from './context/GameContext'
 import { WorldProvider }
 from './context/WorldContext'
 
+import { InventoryProvider }
+from './context/InventoryContext'
+
+import { PetProvider }
+from './context/PetContext'
+
+import { RewardProvider }
+from './context/RewardContext'
+
 import './index.css'
 import './styles/theme.css'
 
@@ -18,7 +27,13 @@ ReactDOM.createRoot(
   <React.StrictMode>
     <GameProvider>
       <WorldProvider>
-        <App />
+        <InventoryProvider>
+          <PetProvider>
+            <RewardProvider>
+              <App />
+            </RewardProvider>
+          </PetProvider>
+        </InventoryProvider>
       </WorldProvider>
     </GameProvider>
   </React.StrictMode>
