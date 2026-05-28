@@ -57,6 +57,27 @@ const cards = [
   route: '/leaderboard',
   glow: 'purpleGlow',
 },
+{
+  title: 'Wizard Shop',
+  subtitle: 'Spend magical gems',
+  emoji: '🛒',
+  route: '/shop',
+  glow: 'pinkGlow',
+},
+{
+  title: 'Story Mode',
+  subtitle: 'Play magical quests',
+  emoji: '📜',
+  route: '/story',
+  glow: 'purpleGlow',
+},
+{
+  title: 'Math Battle',
+  subtitle: 'Solve magical questions',
+  emoji: '⚡',
+  route: '/battle',
+  glow: 'purpleGlow',
+},
 ]
 
 export default function HomeScreen() {

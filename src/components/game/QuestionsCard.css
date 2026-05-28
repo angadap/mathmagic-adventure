@@ -1,0 +1,83 @@
+.questionCard {
+  padding: 28px;
+
+  border-radius: 28px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(25,28,55,0.95),
+      rgba(37,40,70,0.95)
+    );
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  box-shadow:
+    0 0 40px rgba(123,44,255,0.18);
+}
+
+.difficultyBadge {
+  display: inline-block;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  background: rgba(115,240,255,0.15);
+
+  color: #73f0ff;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+.questionText {
+  margin-top: 24px;
+
+  font-size: 52px;
+
+  font-weight: 900;
+
+  text-align: center;
+}
+
+.optionsGrid {
+  margin-top: 32px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap: 16px;
+}
+
+.optionButton {
+  height: 68px;
+
+  border: none;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7b2cff,
+      #ff4fd8
+    );
+
+  color: white;
+
+  font-size: 24px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+.optionButton:hover {
+  transform: translateY(-3px);
+}

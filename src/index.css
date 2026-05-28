@@ -21,3 +21,33 @@ button {
 body {
   margin: 0;
 }
+
+.magicButton {
+  border: none;
+
+  min-height: 54px;
+
+  padding: 0 22px;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7b2cff,
+      #ff4fd8
+    );
+
+  color: white;
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 0 30px rgba(123,44,255,0.4);
+
+  transition: all 0.25s ease;
+}

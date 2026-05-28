@@ -1,0 +1,90 @@
+.spellWrapper {
+  position: relative;
+
+  width: 220px;
+  height: 220px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.magicCore {
+  position: absolute;
+
+  width: 90px;
+  height: 90px;
+
+  border-radius: 999px;
+
+  filter: blur(2px);
+
+  box-shadow:
+    0 0 40px currentColor,
+    0 0 80px currentColor;
+}
+
+.magicCore.fire {
+  background: #ff6b35;
+  color: #ff6b35;
+}
+
+.magicCore.ice {
+  background: #73f0ff;
+  color: #73f0ff;
+}
+
+.magicCore.arcane {
+  background: #c77dff;
+  color: #c77dff;
+}
+
+.particle {
+  position: absolute;
+
+  width: 14px;
+  height: 14px;
+
+  border-radius: 999px;
+
+  box-shadow:
+    0 0 12px currentColor;
+}
+
+.particle.fire {
+  background: #ff6b35;
+  color: #ff6b35;
+}
+
+.particle.ice {
+  background: #73f0ff;
+  color: #73f0ff;
+}
+
+.particle.arcane {
+  background: #c77dff;
+  color: #c77dff;
+}
+
+.shockwave {
+  position: absolute;
+
+  width: 120px;
+  height: 120px;
+
+  border-radius: 999px;
+
+  border: 4px solid currentColor;
+}
+
+.shockwave.fire {
+  color: #ff6b35;
+}
+
+.shockwave.ice {
+  color: #73f0ff;
+}
+
+.shockwave.arcane {
+  color: #c77dff;
+}

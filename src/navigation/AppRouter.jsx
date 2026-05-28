@@ -12,6 +12,9 @@ import AdventureWorldMap from '../screens/AdventureWorldMap'
 import InventoryScreen from '../screens/InventoryScreen'
 import PetScreen from '../screens/PetScreen'
 import LeaderboardScreen from '../screens/LeaderboardScreen'
+import ShopScreen from '../screens/ShopScreen'
+import StoryScreen from '../screens/StoryScreen'
+import MathBattleScreen from '../screens/MathBattleScreen'
 
 export default function AppRouter() {
   return (
@@ -20,6 +23,13 @@ export default function AppRouter() {
         <Route
           path="/"
           element={<HomeScreen />}
+        />
+
+        <Route
+          path="/battle"
+          element={
+            <MathBattleScreen />
+          }
         />
 
         <Route
@@ -55,6 +65,16 @@ export default function AppRouter() {
         <Route
           path="/leaderboard"
           element={<LeaderboardScreen />}
+        />
+
+        <Route
+          path="/shop"
+          element={<ShopScreen />}
+        />
+
+        <Route
+          path="/story"
+          element={<StoryScreen />}
         />
       </Routes>
     </BrowserRouter>

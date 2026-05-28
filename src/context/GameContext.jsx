@@ -45,12 +45,15 @@ export function GameProvider({
   }
 
   // GEMS
-  const addGems = (amount) => {
-    setPlayer((prev) => ({
-      ...prev,
-      gems: prev.gems + amount,
-    }))
-  }
+const addGems = (amount) => {
+  setPlayer((prev) => ({
+    ...prev,
+    gems: Math.max(
+      prev.gems + amount,
+      0
+    ),
+  }))
+}
 
   // AVATAR
   const setAvatar = (avatar) => {

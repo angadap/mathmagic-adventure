@@ -18,6 +18,9 @@ from './context/PetContext'
 import { RewardProvider }
 from './context/RewardContext'
 
+import { QuestProvider }
+from './context/QuestContext'
+
 import './index.css'
 import './styles/theme.css'
 
@@ -30,7 +33,9 @@ ReactDOM.createRoot(
         <InventoryProvider>
           <PetProvider>
             <RewardProvider>
-              <App />
+              <QuestProvider>
+                <App />
+              </QuestProvider>
             </RewardProvider>
           </PetProvider>
         </InventoryProvider>
