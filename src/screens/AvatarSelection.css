@@ -1,0 +1,80 @@
+.avatarScreen {
+  padding-top: 40px;
+}
+
+.avatarHeader {
+  text-align: center;
+}
+
+.avatarBadge {
+  display: inline-block;
+
+  padding: 10px 18px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.08);
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  font-size: 11px;
+
+  letter-spacing: 2px;
+
+  color: #cfd3ff;
+
+  backdrop-filter: blur(20px);
+}
+
+.avatarHeader h1 {
+  margin-top: 22px;
+
+  font-size: 48px;
+
+  font-weight: 900;
+}
+
+.avatarHeader p {
+  margin-top: 14px;
+
+  color: #cfd3ff;
+
+  line-height: 1.7;
+}
+
+.avatarGrid {
+  margin-top: 40px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.avatarEmoji {
+  font-size: 52px;
+}
+
+.avatarGrid h2 {
+  margin-top: 18px;
+
+  font-size: 28px;
+
+  font-weight: 800;
+}
+
+.avatarGrid p {
+  margin-top: 10px;
+
+  color: #d5d8ff;
+}
+
+.selectedAvatar {
+  border: 2px solid #73f0ff;
+
+  box-shadow:
+    0 0 30px rgba(115,240,255,0.4);
+}
+
+.avatarButton {
+  margin-top: 32px;
+}

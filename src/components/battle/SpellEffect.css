@@ -1,0 +1,63 @@
+.spellEffect {
+  position: absolute;
+
+  top: 45%;
+  left: 50%;
+
+  transform: translate(-50%, -50%);
+
+  font-size: 120px;
+
+  z-index: 30;
+
+  pointer-events: none;
+
+  animation:
+    pulseSpell 0.7s ease;
+}
+
+.fire {
+  filter:
+    drop-shadow(0 0 30px #ff4d67);
+}
+
+.ice {
+  filter:
+    drop-shadow(0 0 30px #73f0ff);
+}
+
+.lightning {
+  filter:
+    drop-shadow(0 0 30px #ffe066);
+}
+
+.cosmic {
+  filter:
+    drop-shadow(0 0 30px #c77dff);
+}
+
+@keyframes pulseSpell {
+  0% {
+    transform:
+      translate(-50%, -50%)
+      scale(0.3);
+
+    opacity: 0;
+  }
+
+  50% {
+    transform:
+      translate(-50%, -50%)
+      scale(1.3);
+
+    opacity: 1;
+  }
+
+  100% {
+    transform:
+      translate(-50%, -50%)
+      scale(1);
+
+    opacity: 0;
+  }
+}

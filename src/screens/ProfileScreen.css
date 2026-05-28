@@ -1,0 +1,203 @@
+.profileScreen {
+  padding-top: 40px;
+}
+
+.profileHero {
+  text-align: center;
+}
+
+.profileAvatar {
+  width: 130px;
+  height: 130px;
+
+  margin: auto;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    135deg,
+    #7b2cff,
+    #ff4fd8
+  );
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 64px;
+
+  box-shadow:
+    0 0 50px rgba(123,44,255,0.5);
+}
+
+.profileHero h1 {
+  margin-top: 24px;
+
+  font-size: 42px;
+
+  font-weight: 900;
+}
+
+.profileHero p {
+  margin-top: 12px;
+
+  color: #cfd3ff;
+}
+
+.xpCard {
+  margin-top: 36px;
+}
+
+.xpTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.smallLabel {
+  font-size: 11px;
+
+  letter-spacing: 2px;
+
+  color: #cfd3ff;
+}
+
+.xpTop h2 {
+  margin-top: 10px;
+
+  font-size: 34px;
+}
+
+.xpIcon {
+  width: 64px;
+  height: 64px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    135deg,
+    #ff9f43,
+    #ff4d67
+  );
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xpBar {
+  margin-top: 24px;
+
+  height: 18px;
+
+  border-radius: 999px;
+
+  background: rgba(0,0,0,0.25);
+
+  overflow: hidden;
+}
+
+.xpFill {
+  height: 100%;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    to right,
+    #73f0ff,
+    #7b2cff
+  );
+}
+
+.xpValue {
+  margin-top: 14px;
+
+  color: #cfd3ff;
+}
+
+.statsGrid {
+  margin-top: 28px;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.statIcon {
+  width: 60px;
+  height: 60px;
+
+  border-radius: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.purpleStat {
+  background: linear-gradient(
+    135deg,
+    #7b2cff,
+    #a259ff
+  );
+}
+
+.pinkStat {
+  background: linear-gradient(
+    135deg,
+    #ff4fd8,
+    #ff7bcb
+  );
+}
+
+.statsGrid h3 {
+  margin-top: 18px;
+
+  font-size: 34px;
+}
+
+.statsGrid p {
+  margin-top: 8px;
+
+  color: #cfd3ff;
+}
+
+.achievementSection {
+  margin-top: 36px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-weight: 700;
+}
+
+.achievementList {
+  margin-top: 20px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.achievementRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.achievementRow h4 {
+  font-size: 20px;
+}
+
+.achievementRow p {
+  margin-top: 8px;
+
+  color: #cfd3ff;
+}
+
+.achievementEmoji {
+  font-size: 42px;
+}

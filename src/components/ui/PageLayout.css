@@ -1,0 +1,48 @@
+.pageLayout {
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+
+  background: linear-gradient(
+    180deg,
+    #050816 0%,
+    #0d1230 45%,
+    #17133d 100%
+  );
+
+  color: white;
+}
+
+.pageContent {
+  position: relative;
+  z-index: 2;
+
+  max-width: 430px;
+  margin: auto;
+
+  padding: 24px;
+  padding-bottom: 120px;
+}
+
+.bgGlow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(120px);
+  opacity: 0.35;
+}
+
+.glow1 {
+  width: 280px;
+  height: 280px;
+  background: #7b2cff;
+  top: -100px;
+  left: -100px;
+}
+
+.glow2 {
+  width: 260px;
+  height: 260px;
+  background: #ff4fd8;
+  bottom: -80px;
+  right: -100px;
+}

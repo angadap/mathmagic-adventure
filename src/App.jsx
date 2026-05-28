@@ -1,7 +1,7 @@
-import BossBattle from './screens/BossBattle'
+import AppRouter from './navigation/AppRouter'
 
 function App() {
-  return <BossBattle />
+  return <AppRouter />
 }
 
 export default App

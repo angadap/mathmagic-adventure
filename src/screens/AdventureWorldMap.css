@@ -1,0 +1,176 @@
+.worldMapScreen {
+  padding-top: 40px;
+}
+
+.worldHeader {
+  text-align: center;
+}
+
+.worldBadge {
+  display: inline-block;
+
+  padding: 10px 18px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.08);
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  font-size: 11px;
+
+  letter-spacing: 2px;
+
+  color: #cfd3ff;
+}
+
+.worldHeader h1 {
+  margin-top: 22px;
+
+  font-size: 52px;
+
+  font-weight: 900;
+}
+
+.worldHeader p {
+  margin-top: 16px;
+
+  color: #cfd3ff;
+
+  line-height: 1.7;
+}
+
+.worldPath {
+  margin-top: 42px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.worldWrapper {
+  position: relative;
+}
+
+.pathLine {
+  position: absolute;
+
+  left: 50%;
+  top: -28px;
+
+  width: 4px;
+  height: 28px;
+
+  background: linear-gradient(
+    to bottom,
+    #73f0ff,
+    transparent
+  );
+
+  transform: translateX(-50%);
+}
+
+.worldCard {
+  position: relative;
+}
+
+.lockedWorld {
+  opacity: 0.45;
+}
+
+.worldTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.worldEmoji {
+  font-size: 54px;
+}
+
+.lockIcon {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.08);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.worldCard h2 {
+  margin-top: 18px;
+
+  font-size: 30px;
+
+  font-weight: 800;
+}
+
+.worldCard p {
+  margin-top: 10px;
+
+  color: #cfd3ff;
+}
+
+.worldBottom {
+  margin-top: 24px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.starsRow {
+  display: flex;
+  gap: 8px;
+}
+
+.completedBadge {
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  background: rgba(115,240,255,0.15);
+
+  color: #73f0ff;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+.worldFooter {
+  margin-top: 36px;
+}
+
+.crownBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 18px;
+
+  border-radius: 24px;
+
+  background: rgba(255,255,255,0.08);
+
+  color: #ffd166;
+}
+.completeIcon {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 999px;
+
+  background: rgba(115,240,255,0.15);
+
+  color: #73f0ff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

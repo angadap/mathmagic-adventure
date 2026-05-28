@@ -1,52 +1,60 @@
 import { motion } from 'framer-motion'
-import {
-  Sparkles,
-  Flame,
-  Trophy,
-  Swords,
-  Star,
-} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import './HomeScreen.css'
 
+
+
 const cards = [
+
+  {
+  title: 'Choose Avatar',
+  subtitle: 'Select your magical hero',
+  emoji: '🧙',
+  route: '/avatars',
+  glow: 'cyanGlow',
+  },
   {
     title: 'Adventure Mode',
-    subtitle: 'Explore magical math worlds',
-    icon: '🗺️',
+    subtitle: 'Explore magical worlds',
+    emoji: '🗺️',
+    route: '/adventure',
     glow: 'purpleGlow',
   },
   {
     title: 'Boss Battle',
-    subtitle: 'Defeat monsters using math',
-    icon: '⚔️',
+    subtitle: 'Defeat powerful monsters',
+    emoji: '⚔️',
+    route: '/boss',
     glow: 'redGlow',
   },
   {
-    title: 'Daily Quests',
-    subtitle: 'Complete challenges & earn rewards',
-    icon: '🔥',
+    title: 'Daily Quest',
+    subtitle: 'Earn bonus rewards',
+    emoji: '✨',
+    route: null,
     glow: 'cyanGlow',
   },
 ]
 
 export default function HomeScreen() {
+  const navigate = useNavigate()
+
   return (
     <div className="homeScreen">
       {/* Background Effects */}
-      <div className="backgroundGlow bg1"></div>
-      <div className="backgroundGlow bg2"></div>
-      <div className="backgroundGlow bg3"></div>
+      <div className="bgGlow glow1"></div>
+      <div className="bgGlow glow2"></div>
 
       {/* Floating Particles */}
       <div className="particles">
-        {[...Array(25)].map((_, i) => (
+        {[...Array(20)].map((_, i) => (
           <span
             key={i}
             className="particle"
             style={{
               left: `${Math.random() * 100}%`,
-              animationDuration: `${4 + Math.random() * 6}s`,
+              animationDuration: `${5 + Math.random() * 5}s`,
               animationDelay: `${Math.random() * 5}s`,
             }}
           >
@@ -55,95 +63,53 @@ export default function HomeScreen() {
         ))}
       </div>
 
-      <div className="contentWrapper">
-        {/* Hero Section */}
+      <div className="homeContainer">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
           className="heroSection"
         >
-          <div className="wizardOrb">
-            🧙
+          <div className="heroBadge">
+            MAGICAL MATH ADVENTURE
           </div>
 
-          <h1 className="title">MathMagic</h1>
+          <h1 className="heroTitle">
+            MathMagic
+          </h1>
 
-          <div className="academyText">
-            FANTASY ACADEMY
-          </div>
-
-          <p className="subtitle">
-            Learn math through magical adventures ✨
+          <p className="heroSubtitle">
+            Learn maths through magical battles,
+            adventures and fantasy quests.
           </p>
         </motion.div>
 
-        {/* XP Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="xpCard"
-        >
-          <div className="xpTop">
-            <div>
-              <div className="smallLabel">Current Rank</div>
-              <div className="rankText">Galaxy Wizard</div>
-            </div>
-
-            <div className="streakBox">
-              <Flame size={20} />
-              <span>7</span>
-            </div>
-          </div>
-
-          <div className="xpBar">
-            <div className="xpFill"></div>
-          </div>
-
-          <div className="xpNumbers">
-            <span>1800 XP</span>
-            <span>2500 XP</span>
-          </div>
-        </motion.div>
-
-        {/* Reward Banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-          className="rewardBanner"
-        >
-          <div>
-            <div className="rewardTitle">Daily Reward</div>
-            <div className="rewardSubtitle">
-              Claim magical treasure chest
-            </div>
-          </div>
-
-          <button className="claimButton">
-            Claim
-          </button>
-        </motion.div>
-
-        {/* Main Cards */}
-        <div className="cardsContainer">
+        {/* Cards */}
+        <div className="cardsGrid">
           {cards.map((card, index) => (
             <motion.div
               key={card.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 + index * 0.1 }}
+              transition={{
+                delay: 0.3 + index * 0.1,
+              }}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               className={`magicCard ${card.glow}`}
+              onClick={() => {
+                if (card.route) {
+                  navigate(card.route)
+                }
+              }}
             >
-              <div>
-                <h2>{card.title}</h2>
-                <p>{card.subtitle}</p>
+              <div className="cardEmoji">
+                {card.emoji}
               </div>
 
-              <div className="cardIcon">{card.icon}</div>
+              <h2>{card.title}</h2>
+
+              <p>{card.subtitle}</p>
             </motion.div>
           ))}
         </div>
@@ -151,28 +117,31 @@ export default function HomeScreen() {
         {/* Bottom Navigation */}
         <div className="bottomNav">
           <div className="navItem activeNav">
-            <Sparkles size={20} />
+            🏠
             <span>Home</span>
           </div>
 
           <div className="navItem">
-            <Star size={20} />
-            <span>Adventure</span>
+            🗺️
+            <span>Map</span>
           </div>
 
           <div className="battleButton">
-            <Swords size={32} />
+            ⚔️
           </div>
 
           <div className="navItem">
-            <Trophy size={20} />
+            🏆
             <span>Rewards</span>
           </div>
 
-          <div className="navItem">
-            👤
-            <span>Profile</span>
-          </div>
+<div
+  className="navItem"
+  onClick={() => navigate('/profile')}
+>
+  👤
+  <span>Profile</span>
+</div>
         </div>
       </div>
     </div>

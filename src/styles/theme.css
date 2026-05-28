@@ -1,0 +1,27 @@
+:root {
+  --bg-dark: #050816;
+  --bg-mid: #0d1230;
+  --bg-light: #17133d;
+
+  --text-primary: #ffffff;
+  --text-secondary: #cfd3ff;
+
+  --cyan: #73f0ff;
+  --purple: #7b2cff;
+  --pink: #ff4fd8;
+  --red: #ff4d67;
+  --orange: #ff9f43;
+
+  --glass-bg: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.08);
+
+  --shadow-purple: 0 0 40px rgba(123,44,255,0.4);
+
+  --radius-xl: 32px;
+  --radius-lg: 24px;
+  --radius-md: 18px;
+
+  --blur-xl: blur(30px);
+
+  --transition-fast: 0.25s;
+}

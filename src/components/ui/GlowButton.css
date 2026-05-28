@@ -1,0 +1,26 @@
+.glowButton {
+  border: none;
+  border-radius: 999px;
+  padding: 16px 28px;
+  background: linear-gradient(
+    135deg,
+    #7b2cff,
+    #ff4fd8
+  );
+
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.3s;
+
+  box-shadow:
+    0 0 30px rgba(123,44,255,0.4);
+}
+
+.glowButton:hover {
+  transform: scale(1.04);
+}
+
+.fullWidth {
+  width: 100%;
+}

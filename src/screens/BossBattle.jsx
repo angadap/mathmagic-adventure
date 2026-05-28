@@ -1,5 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+
+import useWorlds from '../hooks/useWorlds'
+
 import { motion } from 'framer-motion'
+
 import Confetti from 'react-confetti'
 
 import {
@@ -9,42 +13,118 @@ import {
   Crown,
 } from 'lucide-react'
 
+import SpellEffect from '../components/battle/SpellEffect'
+
+import useQuestionEngine from '../hooks/useQuestionEngine'
+
+import useGame from '../hooks/useGame'
+
 import './BossBattle.css'
 
 export default function BossBattle() {
-  const [bossHP, setBossHP] = useState(100)
-  const [combo, setCombo] = useState(0)
-  const [showVictory, setShowVictory] = useState(false)
+  const [bossHP, setBossHP] =
+    useState(100)
 
-  const correctAnswer = 56
+  const [showVictory,
+    setShowVictory] =
+    useState(false)
 
-  const answers = [42, 56, 64, 48]
+  const [spell,
+    setSpell] =
+    useState(null)
+
+  const [screenShake,
+    setScreenShake] =
+    useState(false)
+
+  const {
+    currentQuestion,
+    combo,
+    score,
+    submitAnswer,
+  } = useQuestionEngine('easy')
+
+ const { addXP, addGems } =
+  useGame()
+
+const { completeWorld } =
+  useWorlds()
 
   const attackBoss = (value) => {
-    if (value === correctAnswer) {
-      const newHP = Math.max(bossHP - 20, 0)
+    const isCorrect =
+      submitAnswer(value)
+
+    if (isCorrect) {
+      const newHP =
+        Math.max(bossHP - 20, 0)
 
       setBossHP(newHP)
-      setCombo(combo + 1)
+
+      // SPELL EFFECT
+      const spells = [
+        'fire',
+        'ice',
+        'lightning',
+        'cosmic',
+      ]
+
+      const randomSpell =
+        spells[
+          Math.floor(
+            Math.random() *
+            spells.length
+          )
+        ]
+
+      setSpell(randomSpell)
+
+      setTimeout(() => {
+        setSpell(null)
+      }, 700)
 
       if (newHP <= 0) {
         setShowVictory(true)
+
+        addXP(250)
+
+        addGems(50)
       }
     } else {
-      setCombo(0)
+      // SCREEN SHAKE
+      setScreenShake(true)
+
+      setTimeout(() => {
+        setScreenShake(false)
+      }, 500)
     }
   }
 
+  if (!currentQuestion) return null
+
   return (
-    <div className="bossScreen">
+    <motion.div
+      animate={
+        screenShake
+          ? {
+              x: [-10, 10, -10, 10, 0],
+            }
+          : {}
+      }
+      transition={{
+        duration: 0.4,
+      }}
+      className="bossScreen"
+    >
       {showVictory && <Confetti />}
 
-      {/* Background Glows */}
+      {spell && (
+        <SpellEffect type={spell} />
+      )}
+
       <div className="battleGlow glow1"></div>
       <div className="battleGlow glow2"></div>
       <div className="battleGlow glow3"></div>
 
-      {/* Floating Particles */}
       <div className="battleParticles">
         {[...Array(30)].map((_, i) => (
           <span
@@ -62,7 +142,6 @@ export default function BossBattle() {
       </div>
 
       <div className="battleContainer">
-        {/* Header */}
         <div className="battleHeader">
           <div>
             <div className="battleLabel">
@@ -77,22 +156,23 @@ export default function BossBattle() {
           </div>
         </div>
 
-        {/* Boss HP */}
         <div className="bossHPCard">
           <div className="hpTop">
             <span>Boss HP</span>
+
             <span>{bossHP}/100</span>
           </div>
 
           <div className="hpBar">
             <motion.div
-              animate={{ width: `${bossHP}%` }}
+              animate={{
+                width: `${bossHP}%`,
+              }}
               className="hpFill"
             ></motion.div>
           </div>
         </div>
 
-        {/* Boss Monster */}
         <motion.div
           animate={{
             y: [0, -10, 0],
@@ -106,53 +186,68 @@ export default function BossBattle() {
           👹
         </motion.div>
 
-        {/* Combo Section */}
         <div className="comboCard">
           <div className="comboItem">
             <Flame size={20} />
+
             <span>Combo x{combo}</span>
           </div>
 
           <div className="comboItem">
             <Shield size={20} />
+
             <span>Shield 80%</span>
           </div>
 
           <div className="comboItem">
             <Zap size={20} />
-            <span>Mana 60%</span>
+
+            <span>Score {score}</span>
           </div>
         </div>
 
-        {/* Question */}
         <div className="questionCard">
           <div className="questionLabel">
             Solve the Fire Rune
           </div>
 
-          <h2>8 × 7 = ?</h2>
+          <h2>
+            {currentQuestion.question}
+          </h2>
         </div>
 
-        {/* Answer Buttons */}
         <div className="answersGrid">
-          {answers.map((answer) => (
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              key={answer}
-              onClick={() => attackBoss(answer)}
-              className="answerButton"
-            >
-              {answer}
-            </motion.button>
-          ))}
+          {currentQuestion.answers.map(
+            (answer) => (
+              <motion.button
+                whileHover={{
+                  scale: 1.04,
+                }}
+                whileTap={{
+                  scale: 0.96,
+                }}
+                key={answer}
+                onClick={() =>
+                  attackBoss(answer)
+                }
+                className="answerButton"
+              >
+                {answer}
+              </motion.button>
+            )
+          )}
         </div>
 
-        {/* Victory Popup */}
         {showVictory && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{
+              opacity: 0,
+              scale: 0.7,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+            }}
             className="victoryPopup"
           >
             <div className="victoryEmoji">
@@ -162,8 +257,8 @@ export default function BossBattle() {
             <h2>Boss Defeated!</h2>
 
             <p>
-              You earned 250 XP and unlocked
-              Fire Spell Magic!
+              You earned 250 XP and
+              unlocked magical spell powers!
             </p>
 
             <div className="rewardRow">
@@ -182,7 +277,6 @@ export default function BossBattle() {
           </motion.div>
         )}
 
-        {/* Bottom Arena */}
         <div className="arenaFooter">
           <div className="arenaText">
             🔥 Magical Arena Battle
@@ -193,6 +287,6 @@ export default function BossBattle() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
